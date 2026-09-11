@@ -1,14 +1,13 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class HandLayout : MonoBehaviour
+public class AIHandLayout : MonoBehaviour
 {
-    public float cardSpacing = 0.75f;
-    public float arcCurve = 0.18f;
-    public float rotationFan = 7f;
+    public float cardSpacing = 0.65f;
     public float cardHeight = 0.03f;
 
-    public void UpdateHandLayout(List<Card3D> cards)
+    public void UpdateAIHand(
+        List<Card3D> cards)
     {
         int count = cards.Count;
 
@@ -20,28 +19,24 @@ public class HandLayout : MonoBehaviour
             float x =
                 offset * cardSpacing;
 
-            float z =
-                -Mathf.Abs(offset) * arcCurve;
-
-            float y =
-                cardHeight + i * 0.002f;
-
-            float rotation =
-                -offset * rotationFan;
-
             Transform card =
                 cards[i].transform;
 
             card.SetParent(transform);
 
             card.localPosition =
-                new Vector3(x, y, z);
+                new Vector3(
+                    x,
+                    cardHeight,
+                    0f);
 
             card.localRotation =
                 Quaternion.Euler(
                     0f,
-                    rotation,
+                    180f,
                     0f);
+
+            card.SetCardBackVisible(true);
         }
     }
 }
