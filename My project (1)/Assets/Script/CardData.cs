@@ -1,18 +1,57 @@
-public enum CardColor { Red, Yellow, Green, Blue, Wild }
-public enum CardType { Number, Draw2, Draw4, Reverse, Skip, ColorChange }
+using System;
 
-[System.Serializable]
+public enum CardColor
+{
+    Purple,
+    Green,
+    Yellow,
+    Red,
+    Wild
+}
+
+public enum CardType
+{
+    Number,
+    Draw2,
+    Draw4,
+    Reverse,
+    Skip,
+    ColorChange
+}
+
+[Serializable]
 public class CardData
 {
     public CardColor color;
     public CardType type;
     public int number;
 
-    public CardData(CardColor c, CardType t, int n = -1) { color = c; type = t; number = n; }
-
-    public bool CanPlay(CardData top)
+    public CardData(
+        CardColor color,
+        CardType type,
+        int number = -1)
     {
-        if (type != CardType.Number) return true; // Specials act as Jokers
-        return color == top.color || number == top.number;
+        this.color = color;
+        this.type = type;
+        this.number = number;
+    }
+
+    public bool CanPlay(CardData topCard)
+    {
+        if (topCard == null)
+            return true;
+
+        // Your custom rule:
+        // every special card behaves like a wild card.
+        if (type != CardType.Number)
+            return true;
+
+        return color == topCard.color ||
+               number == topCard.number;
+    }
+
+    public bool IsSpecial()
+    {
+        return type != CardType.Number;
     }
 }
