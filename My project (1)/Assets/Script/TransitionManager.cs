@@ -8,45 +8,46 @@ public class TransitionManager : MonoBehaviour
     public static TransitionManager Instance;
 
     [Header("Cameras")]
-    public CinemachineCamera vcamTopDown;
-    public CinemachineCamera vcamWide;
-    public CinemachineCamera vcamMinigame;
+    [SerializeField] private CinemachineCamera topDownCamera;
+    [SerializeField] private CinemachineCamera wideCamera;
+    [SerializeField] private CinemachineCamera minigameCamera;
 
-    [Header("UI")]
-    public RectTransform minigamePanel;
-    public TextMeshProUGUI countdownText;
+    [Header("Intro UI")]
+    [SerializeField] private RectTransform minigamePanel;
+    [SerializeField] private TextMeshProUGUI countdownText;
 
     [Header("Timing")]
-    public float wideDuration = 1.2f;
-    public float minigameCameraDuration = 0.8f;
-    public float panelSlideDuration = 0.3f;
+    [SerializeField] private float wideHoldTime = 1.2f;
+    [SerializeField] private float minigameHoldTime = 0.8f;
+    [SerializeField] private float panelSlideTime = 0.3f;
 
-    private Vector2 offscreen =
+    private readonly Vector2 offscreen =
         new Vector2(-2500f, 0f);
 
-    private Vector2 onscreen =
+    private readonly Vector2 onscreen =
         Vector2.zero;
 
     private void Awake()
     {
         Instance = this;
 
-        minigamePanel
-            .anchoredPosition = offscreen;
+        if (minigamePanel != null)
+            minigamePanel.anchoredPosition =
+                offscreen;
 
-        SetTopDownCamera();
+        SetNormalCamera();
     }
 
-    private void SetTopDownCamera()
+    private void SetNormalCamera()
     {
-        vcamTopDown.Priority = 50;
-        vcamWide.Priority = 10;
-        vcamMinigame.Priority = 5;
+        topDownCamera.Priority = 100;
+        wideCamera.Priority = 10;
+        minigameCamera.Priority = 5;
     }
 
-    public void StartChallenge(
-        string instruction)
+    public void StartChallenge(string instruction)
     {
+        StopAllCoroutines();
         StartCoroutine(
             ChallengeSequence(instruction));
     }
@@ -54,34 +55,37 @@ public class TransitionManager : MonoBehaviour
     private IEnumerator ChallengeSequence(
         string instruction)
     {
-        // ----------------------------------
-        // TOP-DOWN -> WIDE
-        // ----------------------------------
+        GameManager.Instance.state =
+            GameState.CameraTransition;
 
-        vcamWide.Priority = 60;
+        // --------------------------------
+        // TOP DOWN -> WIDE
+        // --------------------------------
+
+        wideCamera.Priority = 110;
 
         yield return new WaitForSeconds(
-            wideDuration);
+            wideHoldTime);
 
-        // ----------------------------------
+        // --------------------------------
         // WIDE -> MINIGAME
-        // ----------------------------------
+        // --------------------------------
 
-        vcamMinigame.Priority = 70;
+        minigameCamera.Priority = 120;
 
         yield return new WaitForSeconds(
-            minigameCameraDuration);
+            minigameHoldTime);
 
-        // ----------------------------------
-        // SLIDE INTRO
-        // ----------------------------------
+        // --------------------------------
+        // SLIDE PANEL
+        // --------------------------------
 
         float timer = 0f;
 
-        while (timer < panelSlideDuration)
+        while (timer < panelSlideTime)
         {
             float t =
-                timer / panelSlideDuration;
+                timer / panelSlideTime;
 
             minigamePanel.anchoredPosition =
                 Vector2.Lerp(
@@ -97,65 +101,64 @@ public class TransitionManager : MonoBehaviour
         minigamePanel.anchoredPosition =
             onscreen;
 
-        // ----------------------------------
+        // --------------------------------
         // COUNTDOWN
-        // ----------------------------------
+        // --------------------------------
 
         countdownText.text = instruction;
-
         yield return new WaitForSeconds(0.8f);
 
         countdownText.text = "3";
-
-        yield return new WaitForSeconds(0.6f);
+        yield return new WaitForSeconds(0.55f);
 
         countdownText.text = "2";
-
-        yield return new WaitForSeconds(0.6f);
+        yield return new WaitForSeconds(0.55f);
 
         countdownText.text = "1";
-
-        yield return new WaitForSeconds(0.6f);
+        yield return new WaitForSeconds(0.55f);
 
         countdownText.text = "GO!";
-
-        yield return new WaitForSeconds(0.4f);
+        yield return new WaitForSeconds(0.35f);
 
         countdownText.text = "";
 
-        // ----------------------------------
-        // START REAL MINIGAME
-        // ----------------------------------
-
-        MinigameManager.Instance
-            .StartActualMinigame();
+        // --------------------------------
+        // START MINIGAME
+        // --------------------------------
 
         GameManager.Instance.state =
             GameState.Minigame;
+
+        MinigameManager.Instance
+            .StartActualMinigame();
     }
 
     public void EndChallenge()
     {
-        StartCoroutine(
-            ReturnSequence());
+        StopAllCoroutines();
+
+        StartCoroutine(ReturnToTable());
     }
 
-    private IEnumerator ReturnSequence()
+    private IEnumerator ReturnToTable()
     {
-        // Hide panel
+        // -------------------------------
+        // PANEL OUT
+        // -------------------------------
+
         float timer = 0f;
 
-        Vector2 start =
+        Vector2 current =
             minigamePanel.anchoredPosition;
 
-        while (timer < panelSlideDuration)
+        while (timer < panelSlideTime)
         {
             float t =
-                timer / panelSlideDuration;
+                timer / panelSlideTime;
 
             minigamePanel.anchoredPosition =
                 Vector2.Lerp(
-                    start,
+                    current,
                     offscreen,
                     t);
 
@@ -167,18 +170,24 @@ public class TransitionManager : MonoBehaviour
         minigamePanel.anchoredPosition =
             offscreen;
 
-        // Minigame -> Wide
-        vcamWide.Priority = 60;
-        vcamMinigame.Priority = 10;
+        // -------------------------------
+        // MINIGAME -> WIDE
+        // -------------------------------
+
+        wideCamera.Priority = 110;
+        minigameCamera.Priority = 10;
 
         yield return new WaitForSeconds(1f);
 
-        // Wide -> Top Down
-        vcamTopDown.Priority = 70;
-        vcamWide.Priority = 10;
+        // -------------------------------
+        // WIDE -> TABLE
+        // -------------------------------
+
+        topDownCamera.Priority = 120;
+        wideCamera.Priority = 10;
 
         yield return new WaitForSeconds(1f);
 
-        SetTopDownCamera();
+        SetNormalCamera();
     }
 }

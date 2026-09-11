@@ -2,38 +2,41 @@ using UnityEngine;
 
 public class Card3D : MonoBehaviour
 {
-    [Header("Data")]
+    [Header("Card Data")]
     public CardData data;
 
-    [Header("Artwork")]
+    [Header("Artwork Renderer")]
     [SerializeField] private MeshRenderer artworkRenderer;
 
-    [Header("Number Textures")]
+    [Header("Purple Cards")]
     [SerializeField] private Texture2D purple0;
     [SerializeField] private Texture2D purple1;
     [SerializeField] private Texture2D purple2;
     [SerializeField] private Texture2D purple3;
     [SerializeField] private Texture2D purple4;
 
+    [Header("Green Cards")]
     [SerializeField] private Texture2D green0;
     [SerializeField] private Texture2D green1;
     [SerializeField] private Texture2D green2;
     [SerializeField] private Texture2D green3;
     [SerializeField] private Texture2D green4;
 
+    [Header("Yellow Cards")]
     [SerializeField] private Texture2D yellow0;
     [SerializeField] private Texture2D yellow1;
     [SerializeField] private Texture2D yellow2;
     [SerializeField] private Texture2D yellow3;
     [SerializeField] private Texture2D yellow4;
 
+    [Header("Red Cards")]
     [SerializeField] private Texture2D red0;
     [SerializeField] private Texture2D red1;
     [SerializeField] private Texture2D red2;
     [SerializeField] private Texture2D red3;
     [SerializeField] private Texture2D red4;
 
-    [Header("Special Card Artwork")]
+    [Header("Special Cards")]
     [SerializeField] private Texture2D draw2Texture;
     [SerializeField] private Texture2D draw4Texture;
     [SerializeField] private Texture2D reverseTexture;
@@ -44,7 +47,7 @@ public class Card3D : MonoBehaviour
     [SerializeField] private Texture2D cardBackTexture;
 
     [Header("Hover")]
-    [SerializeField] private float hoverHeight = 0.15f;
+    [SerializeField] private float hoverHeight = 0.12f;
 
     private Vector3 startLocalPosition;
     private bool isHovered;
@@ -52,10 +55,24 @@ public class Card3D : MonoBehaviour
     public void SetupCard(CardData newData)
     {
         data = newData;
-
         UpdateArtwork();
-
         startLocalPosition = transform.localPosition;
+    }
+
+    public void SetCardBackVisible(bool visible)
+    {
+        if (artworkRenderer == null)
+            return;
+
+        if (visible)
+        {
+            if (cardBackTexture != null)
+                artworkRenderer.material.mainTexture = cardBackTexture;
+        }
+        else
+        {
+            UpdateArtwork();
+        }
     }
 
     private void UpdateArtwork()
@@ -69,8 +86,7 @@ public class Card3D : MonoBehaviour
         {
             texture = GetNumberTexture(
                 data.color,
-                data.number
-            );
+                data.number);
         }
         else
         {
@@ -88,23 +104,23 @@ public class Card3D : MonoBehaviour
         switch (color)
         {
             case CardColor.Purple:
-                return GetPurple(number);
+                return GetPurpleTexture(number);
 
             case CardColor.Green:
-                return GetGreen(number);
+                return GetGreenTexture(number);
 
             case CardColor.Yellow:
-                return GetYellow(number);
+                return GetYellowTexture(number);
 
             case CardColor.Red:
-                return GetRed(number);
+                return GetRedTexture(number);
 
             default:
                 return null;
         }
     }
 
-    private Texture2D GetPurple(int number)
+    private Texture2D GetPurpleTexture(int number)
     {
         switch (number)
         {
@@ -117,7 +133,7 @@ public class Card3D : MonoBehaviour
         }
     }
 
-    private Texture2D GetGreen(int number)
+    private Texture2D GetGreenTexture(int number)
     {
         switch (number)
         {
@@ -130,7 +146,7 @@ public class Card3D : MonoBehaviour
         }
     }
 
-    private Texture2D GetYellow(int number)
+    private Texture2D GetYellowTexture(int number)
     {
         switch (number)
         {
@@ -143,7 +159,7 @@ public class Card3D : MonoBehaviour
         }
     }
 
-    private Texture2D GetRed(int number)
+    private Texture2D GetRedTexture(int number)
     {
         switch (number)
         {
@@ -177,22 +193,6 @@ public class Card3D : MonoBehaviour
 
             default:
                 return null;
-        }
-    }
-
-    public void SetCardBackVisible(bool visible)
-    {
-        if (artworkRenderer == null)
-            return;
-
-        if (visible)
-        {
-            if (cardBackTexture != null)
-                artworkRenderer.material.mainTexture = cardBackTexture;
-        }
-        else
-        {
-            UpdateArtwork();
         }
     }
 

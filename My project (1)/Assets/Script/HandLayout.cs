@@ -3,10 +3,14 @@ using UnityEngine;
 
 public class HandLayout : MonoBehaviour
 {
-    public float cardSpacing = 0.75f;
-    public float arcCurve = 0.18f;
-    public float rotationFan = 7f;
-    public float cardHeight = 0.03f;
+    [Header("Spacing")]
+    [SerializeField] private float cardSpacing = 0.55f;
+
+    [Header("Curve")]
+    [SerializeField] private float cardArc = 0.10f;
+
+    [Header("Height")]
+    [SerializeField] private float cardHeight = 0.04f;
 
     public void UpdateHandLayout(List<Card3D> cards)
     {
@@ -21,13 +25,7 @@ public class HandLayout : MonoBehaviour
                 offset * cardSpacing;
 
             float z =
-                -Mathf.Abs(offset) * arcCurve;
-
-            float y =
-                cardHeight + i * 0.002f;
-
-            float rotation =
-                -offset * rotationFan;
+                -Mathf.Abs(offset) * cardArc;
 
             Transform card =
                 cards[i].transform;
@@ -35,13 +33,17 @@ public class HandLayout : MonoBehaviour
             card.SetParent(transform);
 
             card.localPosition =
-                new Vector3(x, y, z);
+                new Vector3(
+                    x,
+                    cardHeight,
+                    z);
 
+            // The anchor controls the direction
+            // of this player's hand.
             card.localRotation =
-                Quaternion.Euler(
-                    0f,
-                    rotation,
-                    0f);
+                Quaternion.identity;
+
+            cards[i].SetCardBackVisible(false);
         }
     }
 }

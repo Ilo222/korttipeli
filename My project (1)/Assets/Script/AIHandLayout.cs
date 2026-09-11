@@ -3,11 +3,10 @@ using UnityEngine;
 
 public class AIHandLayout : MonoBehaviour
 {
-    public float cardSpacing = 0.65f;
-    public float cardHeight = 0.03f;
+    [SerializeField] private float cardSpacing = 0.55f;
+    [SerializeField] private float cardHeight = 0.04f;
 
-    public void UpdateAIHand(
-        List<Card3D> cards)
+    public void UpdateAIHand(List<Card3D> cards)
     {
         int count = cards.Count;
 
@@ -19,8 +18,11 @@ public class AIHandLayout : MonoBehaviour
             float x =
                 offset * cardSpacing;
 
+            Card3D card3D =
+                cards[i];
+
             Transform card =
-                cards[i].transform;
+                card3D.transform;
 
             card.SetParent(transform);
 
@@ -31,12 +33,10 @@ public class AIHandLayout : MonoBehaviour
                     0f);
 
             card.localRotation =
-                Quaternion.Euler(
-                    0f,
-                    180f,
-                    0f);
+                Quaternion.identity;
 
-            card.SetCardBackVisible(true);
+            // Hide information from the player.
+            card3D.SetCardBackVisible(true);
         }
     }
 }

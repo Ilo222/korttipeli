@@ -3,8 +3,11 @@ using UnityEngine;
 
 public class AIOpponent : MonoBehaviour
 {
-    [Header("AI Settings")]
-    [Range(0f, 1f)]
+    [Header("AI Identity")]
+    public string opponentName = "AI";
+
+    [Header("AI Difficulty")]
+    [Range(0.1f, 1f)]
     public float challengeChance = 0.75f;
 
     public CardData ChooseCard(
@@ -23,14 +26,14 @@ public class AIOpponent : MonoBehaviour
         if (playable.Count == 0)
             return null;
 
-        // Prefer number cards.
+        // Prefer normal number cards.
         foreach (CardData card in playable)
         {
             if (card.type == CardType.Number)
                 return card;
         }
 
-        // Otherwise use a special.
+        // Otherwise play the first special.
         return playable[0];
     }
 
@@ -55,14 +58,14 @@ public class AIOpponent : MonoBehaviour
                 0.05f,
                 0.90f);
 
-        bool won =
+        bool result =
             Random.value < winChance;
 
         Debug.Log(
-            $"AI challenge result: " +
-            $"{(won ? "WIN" : "LOSE")} " +
+            $"{opponentName} challenge: " +
+            $"{(result ? "WIN" : "LOSE")} " +
             $"at difficulty {difficulty}");
 
-        return won;
+        return result;
     }
 }

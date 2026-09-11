@@ -42,7 +42,7 @@ public class CardData
             return true;
 
         // Your custom rule:
-        // every special card behaves like a wild card.
+        // every special card acts as a Joker/Wild.
         if (type != CardType.Number)
             return true;
 
