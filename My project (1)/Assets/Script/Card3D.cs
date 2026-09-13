@@ -8,33 +8,41 @@ public class Card3D : MonoBehaviour
     [Header("Artwork Renderer")]
     [SerializeField] private MeshRenderer artworkRenderer;
 
-    [Header("Purple Cards")]
+    // =========================================================
+    // NUMBER CARDS
+    // =========================================================
+
+    [Header("Purple Number Cards")]
     [SerializeField] private Texture2D purple0;
     [SerializeField] private Texture2D purple1;
     [SerializeField] private Texture2D purple2;
     [SerializeField] private Texture2D purple3;
     [SerializeField] private Texture2D purple4;
 
-    [Header("Green Cards")]
+    [Header("Green Number Cards")]
     [SerializeField] private Texture2D green0;
     [SerializeField] private Texture2D green1;
     [SerializeField] private Texture2D green2;
     [SerializeField] private Texture2D green3;
     [SerializeField] private Texture2D green4;
 
-    [Header("Yellow Cards")]
+    [Header("Yellow Number Cards")]
     [SerializeField] private Texture2D yellow0;
     [SerializeField] private Texture2D yellow1;
     [SerializeField] private Texture2D yellow2;
     [SerializeField] private Texture2D yellow3;
     [SerializeField] private Texture2D yellow4;
 
-    [Header("Red Cards")]
+    [Header("Red Number Cards")]
     [SerializeField] private Texture2D red0;
     [SerializeField] private Texture2D red1;
     [SerializeField] private Texture2D red2;
     [SerializeField] private Texture2D red3;
     [SerializeField] private Texture2D red4;
+
+    // =========================================================
+    // SPECIAL CARDS
+    // =========================================================
 
     [Header("Special Cards")]
     [SerializeField] private Texture2D draw2Texture;
@@ -43,42 +51,72 @@ public class Card3D : MonoBehaviour
     [SerializeField] private Texture2D skipTexture;
     [SerializeField] private Texture2D colorChangeTexture;
 
+    // =========================================================
+    // CARD BACK
+    // =========================================================
+
     [Header("Card Back")]
     [SerializeField] private Texture2D cardBackTexture;
+
+    // =========================================================
+    // HOVER
+    // =========================================================
 
     [Header("Hover")]
     [SerializeField] private float hoverHeight = 0.12f;
 
-    private Vector3 startLocalPosition;
-    private bool isHovered;
+    private Vector3 startPosition;
+    private bool hovering;
+
+    // =========================================================
+    // SETUP
+    // =========================================================
 
     public void SetupCard(CardData newData)
     {
         data = newData;
-        UpdateArtwork();
-        startLocalPosition = transform.localPosition;
+
+        ApplyFrontTexture();
+
+        startPosition = transform.localPosition;
     }
 
-    public void SetCardBackVisible(bool visible)
+    // =========================================================
+    // FRONT / BACK
+    // =========================================================
+
+    public void SetCardBackVisible(bool showBack)
     {
         if (artworkRenderer == null)
-            return;
-
-        if (visible)
         {
-            if (cardBackTexture != null)
-                artworkRenderer.material.mainTexture = cardBackTexture;
+            Debug.LogError(
+                "Card3D: Artwork Renderer is not assigned on " +
+                gameObject.name
+            );
+
+            return;
+        }
+
+        if (showBack)
+        {
+            ApplyTexture(cardBackTexture);
         }
         else
         {
-            UpdateArtwork();
+            ApplyFrontTexture();
         }
     }
 
-    private void UpdateArtwork()
+    private void ApplyFrontTexture()
     {
-        if (artworkRenderer == null || data == null)
+        if (data == null)
+        {
+            Debug.LogWarning(
+                "Card3D: No CardData assigned."
+            );
+
             return;
+        }
 
         Texture2D texture = null;
 
@@ -86,16 +124,74 @@ public class Card3D : MonoBehaviour
         {
             texture = GetNumberTexture(
                 data.color,
-                data.number);
+                data.number
+            );
         }
         else
         {
-            texture = GetSpecialTexture(data.type);
+            texture = GetSpecialTexture(
+                data.type
+            );
         }
 
-        if (texture != null)
-            artworkRenderer.material.mainTexture = texture;
+        if (texture == null)
+        {
+            Debug.LogWarning(
+                $"Card3D: No texture assigned for " +
+                $"{data.color} / {data.type} / {data.number}"
+            );
+
+            return;
+        }
+
+        ApplyTexture(texture);
     }
+
+    // =========================================================
+    // APPLY TEXTURE
+    // =========================================================
+
+    private void ApplyTexture(Texture2D texture)
+    {
+        if (artworkRenderer == null)
+        {
+            Debug.LogError(
+                "Card3D: Artwork Renderer is missing."
+            );
+
+            return;
+        }
+
+        if (texture == null)
+        {
+            Debug.LogWarning(
+                "Card3D: Texture is null."
+            );
+
+            return;
+        }
+
+        // Get the material used by this specific card.
+        Material material =
+            artworkRenderer.material;
+
+        // URP uses _BaseMap.
+        if (material.HasProperty("_BaseMap"))
+        {
+            material.SetTexture(
+                "_BaseMap",
+                texture
+            );
+        }
+        else
+        {
+            material.mainTexture = texture;
+        }
+    }
+
+    // =========================================================
+    // NUMBER TEXTURES
+    // =========================================================
 
     private Texture2D GetNumberTexture(
         CardColor color,
@@ -172,7 +268,12 @@ public class Card3D : MonoBehaviour
         }
     }
 
-    private Texture2D GetSpecialTexture(CardType type)
+    // =========================================================
+    // SPECIAL TEXTURES
+    // =========================================================
+
+    private Texture2D GetSpecialTexture(
+        CardType type)
     {
         switch (type)
         {
@@ -196,35 +297,50 @@ public class Card3D : MonoBehaviour
         }
     }
 
+    // =========================================================
+    // MOUSE HOVER
+    // =========================================================
+
     private void OnMouseEnter()
     {
-        if (isHovered)
+        if (hovering)
             return;
 
-        startLocalPosition = transform.localPosition;
+        startPosition =
+            transform.localPosition;
 
         transform.localPosition =
-            startLocalPosition +
+            startPosition +
             Vector3.up * hoverHeight;
 
-        isHovered = true;
+        hovering = true;
     }
 
     private void OnMouseExit()
     {
-        if (!isHovered)
+        if (!hovering)
             return;
 
         transform.localPosition =
-            startLocalPosition;
+            startPosition;
 
-        isHovered = false;
+        hovering = false;
     }
+
+    // =========================================================
+    // CLICK
+    // =========================================================
 
     private void OnMouseDown()
     {
         if (GameManager.Instance == null)
+        {
+            Debug.Log(
+                "Card clicked, but GameManager.Instance is null."
+            );
+
             return;
+        }
 
         GameManager.Instance.PlayCard(this);
     }
