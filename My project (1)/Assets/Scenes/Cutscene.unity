@@ -786,7 +786,7 @@ MonoBehaviour:
   waitBeforeEnlarge: 33.5
   enlargeDuration: 4
   waitBeforeSceneChange: 2
-  nextSceneName: 
+  nextSceneName: MiskaMain
 --- !u!4 &687560364
 Transform:
   m_ObjectHideFlags: 0
