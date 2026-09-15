@@ -32,159 +32,189 @@ public class TransitionManager : MonoBehaviour
         Instance = this;
 
         if (minigamePanel != null)
+        {
             minigamePanel.anchoredPosition =
                 offscreen;
+        }
 
         SetNormalCamera();
     }
 
     private void SetNormalCamera()
     {
-        topDownCamera.Priority = 100;
-        wideCamera.Priority = 10;
-        minigameCamera.Priority = 5;
+        if (topDownCamera != null)
+            topDownCamera.Priority = 100;
+
+        if (wideCamera != null)
+            wideCamera.Priority = 10;
+
+        if (minigameCamera != null)
+            minigameCamera.Priority = 5;
     }
 
-    public void StartChallenge(string instruction)
+    public void StartChallenge(
+        string instruction)
     {
         StopAllCoroutines();
+
         StartCoroutine(
-            ChallengeSequence(instruction));
+            ChallengeSequence(
+                instruction
+            )
+        );
     }
 
     private IEnumerator ChallengeSequence(
         string instruction)
     {
-        GameManager.Instance.state =
-            GameState.CameraTransition;
-
-        // --------------------------------
-        // TOP DOWN -> WIDE
-        // --------------------------------
-
-        wideCamera.Priority = 110;
-
-        yield return new WaitForSeconds(
-            wideHoldTime);
-
-        // --------------------------------
-        // WIDE -> MINIGAME
-        // --------------------------------
-
-        minigameCamera.Priority = 120;
-
-        yield return new WaitForSeconds(
-            minigameHoldTime);
-
-        // --------------------------------
-        // SLIDE PANEL
-        // --------------------------------
-
-        float timer = 0f;
-
-        while (timer < panelSlideTime)
+        if (GameManager.Instance != null)
         {
-            float t =
-                timer / panelSlideTime;
-
-            minigamePanel.anchoredPosition =
-                Vector2.Lerp(
-                    offscreen,
-                    onscreen,
-                    t);
-
-            timer += Time.deltaTime;
-
-            yield return null;
+            GameManager.Instance.state =
+                GameState.CameraTransition;
         }
 
-        minigamePanel.anchoredPosition =
-            onscreen;
+        if (wideCamera != null)
+            wideCamera.Priority = 110;
 
-        // --------------------------------
-        // COUNTDOWN
-        // --------------------------------
+        yield return new WaitForSeconds(
+            wideHoldTime
+        );
 
-        countdownText.text = instruction;
-        yield return new WaitForSeconds(0.8f);
+        if (minigameCamera != null)
+            minigameCamera.Priority = 120;
 
-        countdownText.text = "3";
-        yield return new WaitForSeconds(0.55f);
+        yield return new WaitForSeconds(
+            minigameHoldTime
+        );
 
-        countdownText.text = "2";
-        yield return new WaitForSeconds(0.55f);
+        if (minigamePanel != null)
+        {
+            float timer = 0f;
 
-        countdownText.text = "1";
-        yield return new WaitForSeconds(0.55f);
+            while (timer < panelSlideTime)
+            {
+                float t =
+                    timer /
+                    panelSlideTime;
 
-        countdownText.text = "GO!";
-        yield return new WaitForSeconds(0.35f);
+                minigamePanel.anchoredPosition =
+                    Vector2.Lerp(
+                        offscreen,
+                        onscreen,
+                        t
+                    );
 
-        countdownText.text = "";
+                timer += Time.deltaTime;
 
-        // --------------------------------
-        // START MINIGAME
-        // --------------------------------
+                yield return null;
+            }
 
-        GameManager.Instance.state =
-            GameState.Minigame;
+            minigamePanel.anchoredPosition =
+                onscreen;
+        }
 
-        MinigameManager.Instance
-            .StartActualMinigame();
+        if (countdownText != null)
+        {
+            countdownText.text =
+                instruction;
+
+            yield return new WaitForSeconds(
+                0.8f
+            );
+
+            countdownText.text = "3";
+
+            yield return new WaitForSeconds(
+                0.55f
+            );
+
+            countdownText.text = "2";
+
+            yield return new WaitForSeconds(
+                0.55f
+            );
+
+            countdownText.text = "1";
+
+            yield return new WaitForSeconds(
+                0.55f
+            );
+
+            countdownText.text = "GO!";
+
+            yield return new WaitForSeconds(
+                0.35f
+            );
+
+            countdownText.text = "";
+        }
+
+        if (GameManager.Instance != null)
+        {
+            GameManager.Instance.state =
+                GameState.Minigame;
+        }
+
+        if (MinigameManager.Instance != null)
+        {
+            MinigameManager.Instance
+                .StartActualMinigame();
+        }
     }
 
     public void EndChallenge()
     {
         StopAllCoroutines();
 
-        StartCoroutine(ReturnToTable());
+        StartCoroutine(
+            ReturnToTable()
+        );
     }
 
     private IEnumerator ReturnToTable()
     {
-        // -------------------------------
-        // PANEL OUT
-        // -------------------------------
-
-        float timer = 0f;
-
-        Vector2 current =
-            minigamePanel.anchoredPosition;
-
-        while (timer < panelSlideTime)
+        if (minigamePanel != null)
         {
-            float t =
-                timer / panelSlideTime;
+            float timer = 0f;
+
+            Vector2 current =
+                minigamePanel.anchoredPosition;
+
+            while (timer < panelSlideTime)
+            {
+                float t =
+                    timer /
+                    panelSlideTime;
+
+                minigamePanel.anchoredPosition =
+                    Vector2.Lerp(
+                        current,
+                        offscreen,
+                        t
+                    );
+
+                timer += Time.deltaTime;
+
+                yield return null;
+            }
 
             minigamePanel.anchoredPosition =
-                Vector2.Lerp(
-                    current,
-                    offscreen,
-                    t);
-
-            timer += Time.deltaTime;
-
-            yield return null;
+                offscreen;
         }
 
-        minigamePanel.anchoredPosition =
-            offscreen;
+        if (wideCamera != null)
+            wideCamera.Priority = 110;
 
-        // -------------------------------
-        // MINIGAME -> WIDE
-        // -------------------------------
-
-        wideCamera.Priority = 110;
-        minigameCamera.Priority = 10;
+        if (minigameCamera != null)
+            minigameCamera.Priority = 10;
 
         yield return new WaitForSeconds(1f);
 
-        // -------------------------------
-        // WIDE -> TABLE
-        // -------------------------------
+        if (topDownCamera != null)
+            topDownCamera.Priority = 120;
 
-        topDownCamera.Priority = 120;
-        wideCamera.Priority = 10;
+        if (wideCamera != null)
+            wideCamera.Priority = 10;
 
         yield return new WaitForSeconds(1f);
 

@@ -505,7 +505,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &130597837
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -935,9 +935,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: df9f8da6c2ac43d4c8be9e8d88447b27, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::HandLayout
-  cardSpacing: 0.55
-  cardArc: 0.1
+  cardWidth: 1.2
+  overlap: 0.48
+  fanAngle: 28
+  fanDepth: 0.12
+  maximumHandWidth: 5.5
   cardHeight: 0.04
+  centerLift: 0.15
 --- !u!4 &216599624
 Transform:
   m_ObjectHideFlags: 0
@@ -2078,7 +2082,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &775849705
 Transform:
   m_ObjectHideFlags: 0
@@ -2356,6 +2360,8 @@ GameObject:
   - component: {fileID: 844354236}
   - component: {fileID: 844354235}
   - component: {fileID: 844354234}
+  - component: {fileID: 844354238}
+  - component: {fileID: 844354239}
   m_Layer: 0
   m_Name: GameManager
   m_TagString: Untagged
@@ -2410,7 +2416,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::GameManager
   state: 0
   cardPrefab: {fileID: 7919106953844772486, guid: 70ecfe7fa5f4e074bb2aae53339a6fd8, type: 3}
-  drawPilePosition: {fileID: 2020417209}
+  drawPilePosition: {fileID: 854330844}
   discardPilePosition: {fileID: 1017292496}
   playerHandCenter: {fileID: 216599624}
   playerHandLayout: {fileID: 216599623}
@@ -2430,6 +2436,8 @@ MonoBehaviour:
   reverseCopies: 1
   skipCopies: 1
   colorChangeCopies: 1
+  drawPileVisualCards: 8
+  drawPileCardOffset: 0.015
   playerHand: []
   ai1Hand: []
   ai2Hand: []
@@ -2459,6 +2467,116 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &844354238
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 844354233}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f7267df8eae3f4844929f15174127b73, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CardInputController
+  gameplayCamera: {fileID: 1089019184}
+  rayDistance: 100
+--- !u!114 &844354239
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 844354233}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 62899f850307741f2a39c98a8b639597, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.InputSystem::UnityEngine.InputSystem.PlayerInput
+  m_Actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
+  m_NotificationBehavior: 0
+  m_UIInputModule: {fileID: 0}
+  m_DeviceLostEvent:
+    m_PersistentCalls:
+      m_Calls: []
+  m_DeviceRegainedEvent:
+    m_PersistentCalls:
+      m_Calls: []
+  m_ControlsChangedEvent:
+    m_PersistentCalls:
+      m_Calls: []
+  m_ActionEvents: []
+  m_NeverAutoSwitchControlSchemes: 0
+  m_DefaultControlScheme: 
+  m_DefaultActionMap: 
+  m_SplitScreenIndex: -1
+  m_Camera: {fileID: 0}
+--- !u!1 &854330843
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 854330844}
+  - component: {fileID: 854330846}
+  - component: {fileID: 854330845}
+  m_Layer: 0
+  m_Name: goodpile
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &854330844
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 854330843}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0.7071068, z: 0, w: 0.7071068}
+  m_LocalPosition: {x: -7.42, y: 9.427, z: -0.18}
+  m_LocalScale: {x: 1.2, y: 0.08, z: 1.7}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 2037452886}
+  m_LocalEulerAnglesHint: {x: 0, y: 90, z: 0}
+--- !u!65 &854330845
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 854330843}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 1, y: 1, z: 1}
+  m_Center: {x: 0, y: 0, z: 0}
+--- !u!114 &854330846
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 854330843}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4035eda2f71b866418ea538e2dd19778, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DrawPile
 --- !u!1001 &871562936
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -2769,8 +2887,8 @@ Transform:
   m_GameObject: {fileID: 1017292495}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0.7071068, z: 0, w: 0.7071068}
-  m_LocalPosition: {x: -7.42, y: 9.43133, z: -1.74}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalPosition: {x: -7.42, y: 9.427, z: -1.74}
+  m_LocalScale: {x: 1.2, y: 0.08, z: 1.7}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 2037452886}
@@ -2790,7 +2908,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &1033866380
 Transform:
   m_ObjectHideFlags: 0
@@ -2962,7 +3080,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &1045529207
 Transform:
   m_ObjectHideFlags: 0
@@ -4414,7 +4532,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1aa06df4088f7a14484988618e9bc46e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AIHandLayout
-  cardSpacing: 0.55
+  cardWidth: 1.2
+  overlap: 0.5
+  maximumHandWidth: 4.5
   cardHeight: 0.04
 --- !u!4 &1301839088
 Transform:
@@ -4662,7 +4782,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1aa06df4088f7a14484988618e9bc46e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AIHandLayout
-  cardSpacing: 0.55
+  cardWidth: 1.2
+  overlap: 0.5
+  maximumHandWidth: 4.5
   cardHeight: 0.04
 --- !u!4 &1369225266
 Transform:
@@ -5050,7 +5172,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &1599723284
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5708,7 +5830,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &1800223905
 Transform:
   m_ObjectHideFlags: 0
@@ -6146,37 +6268,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1899982806}
   m_CullTransparentMesh: 1
---- !u!1 &2020417208
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 2020417209}
-  m_Layer: 0
-  m_Name: Good pile
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &2020417209
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2020417208}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -9.400061, y: 9.43133, z: -2.48761}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 2037452886}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &2037452885
 GameObject:
   m_ObjectHideFlags: 0
@@ -6207,7 +6298,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1017292496}
-  - {fileID: 2020417209}
+  - {fileID: 854330844}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &2090548272
@@ -6432,7 +6523,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1aa06df4088f7a14484988618e9bc46e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AIHandLayout
-  cardSpacing: 0.55
+  cardWidth: 1.2
+  overlap: 0.5
+  maximumHandWidth: 4.5
   cardHeight: 0.04
 --- !u!4 &2118120529
 Transform:

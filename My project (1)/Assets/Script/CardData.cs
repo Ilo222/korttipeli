@@ -41,8 +41,8 @@ public class CardData
         if (topCard == null)
             return true;
 
-        // Your custom rule:
-        // every special card acts as a Joker/Wild.
+        // Current custom rule:
+        // special cards can always be played.
         if (type != CardType.Number)
             return true;
 

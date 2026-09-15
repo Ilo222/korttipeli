@@ -3,47 +3,120 @@ using UnityEngine;
 
 public class HandLayout : MonoBehaviour
 {
-    [Header("Spacing")]
-    [SerializeField] private float cardSpacing = 0.55f;
+    [Header("Card Size")]
+    [SerializeField] private float cardWidth = 1.2f;
 
-    [Header("Curve")]
-    [SerializeField] private float cardArc = 0.10f;
+    [Header("Fan Layout")]
+    [Range(0f, 0.8f)]
+    [SerializeField] private float overlap = 0.48f;
 
-    [Header("Height")]
-    [SerializeField] private float cardHeight = 0.04f;
+    [SerializeField] private float fanAngle = 28f;
+
+    [SerializeField] private float fanDepth = 0.12f;
+
+    [Header("Hand Size")]
+    [SerializeField] private float maximumHandWidth = 5.5f;
+
+    [Header("Card Height")]
+    [SerializeField] private float cardHeight = 0.08f;
+
+    [Header("Center Lift")]
+    [SerializeField] private float centerLift = 0.05f;
 
     public void UpdateHandLayout(List<Card3D> cards)
     {
+        if (cards == null ||
+            cards.Count == 0)
+            return;
+
         int count = cards.Count;
+
+        float spacing =
+            cardWidth * (1f - overlap);
+
+        if (count > 1)
+        {
+            float maxSpacing =
+                maximumHandWidth /
+                (count - 1);
+
+            spacing =
+                Mathf.Min(
+                    spacing,
+                    maxSpacing
+                );
+        }
+
+        float totalWidth =
+            spacing * (count - 1);
 
         for (int i = 0; i < count; i++)
         {
-            float offset =
-                i - (count - 1) / 2f;
+            Card3D card3D = cards[i];
+
+            if (card3D == null)
+                continue;
+
+            // Clear old hover state before laying the hand out.
+            card3D.SetHovered(false);
+
+            float normalized;
+
+            if (count == 1)
+            {
+                normalized = 0f;
+            }
+            else
+            {
+                normalized =
+                    (float)i /
+                    (count - 1);
+            }
+
+            // -1 = left
+            //  0 = center
+            // +1 = right
+            float centered =
+                normalized * 2f - 1f;
 
             float x =
-                offset * cardSpacing;
+                centered *
+                totalWidth *
+                0.5f;
+
+            float middleFactor =
+                1f - Mathf.Abs(centered);
+
+            float y =
+                cardHeight +
+                middleFactor * centerLift;
 
             float z =
-                -Mathf.Abs(offset) * cardArc;
+                -middleFactor * fanDepth;
+
+            float rotationY =
+                -centered * fanAngle;
 
             Transform card =
-                cards[i].transform;
+                card3D.transform;
 
             card.SetParent(transform);
 
             card.localPosition =
                 new Vector3(
                     x,
-                    cardHeight,
-                    z);
+                    y,
+                    z
+                );
 
-            // The anchor controls the direction
-            // of this player's hand.
             card.localRotation =
-                Quaternion.identity;
+                Quaternion.Euler(
+                    0f,
+                    rotationY,
+                    0f
+                );
 
-            cards[i].SetCardBackVisible(false);
+            card3D.CaptureCurrentTransformAsNormal();
         }
     }
 }

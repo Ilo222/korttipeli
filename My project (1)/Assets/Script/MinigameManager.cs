@@ -7,7 +7,8 @@ public class MinigameManager : MonoBehaviour
     [Header("Difficulty")]
     [SerializeField] private int currentDifficulty = 1;
 
-    public int CurrentDifficulty => currentDifficulty;
+    public int CurrentDifficulty =>
+        currentDifficulty;
 
     private CardColor challengeColor;
     private bool challengerIsPlayer;
@@ -22,10 +23,23 @@ public class MinigameManager : MonoBehaviour
         bool playerIsChallenger)
     {
         challengeColor = color;
-        challengerIsPlayer = playerIsChallenger;
+        challengerIsPlayer =
+            playerIsChallenger;
 
-        TransitionManager.Instance.StartChallenge(
-            GetInstruction(color));
+        if (TransitionManager.Instance == null)
+        {
+            Debug.LogError(
+                "MinigameManager: " +
+                "TransitionManager is missing."
+            );
+
+            return;
+        }
+
+        TransitionManager.Instance
+            .StartChallenge(
+                GetInstruction(color)
+            );
     }
 
     public void StartActualMinigame()
@@ -50,7 +64,8 @@ public class MinigameManager : MonoBehaviour
         }
     }
 
-    private string GetInstruction(CardColor color)
+    private string GetInstruction(
+        CardColor color)
     {
         switch (color)
         {
@@ -75,31 +90,32 @@ public class MinigameManager : MonoBehaviour
     {
         Debug.Log(
             $"Starting SPEED challenge " +
-            $"at level {currentDifficulty}");
-
-        // Later:
-        // YellowSpeedMinigame.Instance.StartGame(...)
+            $"at level {currentDifficulty}"
+        );
     }
 
     private void StartPhysicalGame()
     {
         Debug.Log(
             $"Starting PHYSICAL challenge " +
-            $"at level {currentDifficulty}");
+            $"at level {currentDifficulty}"
+        );
     }
 
     private void StartLuckGame()
     {
         Debug.Log(
             $"Starting LUCK challenge " +
-            $"at level {currentDifficulty}");
+            $"at level {currentDifficulty}"
+        );
     }
 
     private void StartKnowledgeGame()
     {
         Debug.Log(
             $"Starting KNOWLEDGE challenge " +
-            $"at level {currentDifficulty}");
+            $"at level {currentDifficulty}"
+        );
     }
 
     public bool SimulateAIResult()
@@ -109,7 +125,8 @@ public class MinigameManager : MonoBehaviour
                 0.90f -
                 currentDifficulty * 0.18f,
                 0.05f,
-                0.90f);
+                0.90f
+            );
 
         return Random.value < winChance;
     }
@@ -117,12 +134,15 @@ public class MinigameManager : MonoBehaviour
     public void OnMinigameCompleted(
         bool challengerWon)
     {
-        // Increase difficulty for NEXT challenge.
         currentDifficulty++;
 
-        GameManager.Instance
-            .ChallengeFinished(
-                challengerWon);
+        if (GameManager.Instance != null)
+        {
+            GameManager.Instance
+                .ChallengeFinished(
+                    challengerWon
+                );
+        }
     }
 
     public CardColor GetChallengeColor()

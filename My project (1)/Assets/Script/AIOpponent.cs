@@ -14,49 +14,65 @@ public class AIOpponent : MonoBehaviour
         List<CardData> hand,
         CardData topCard)
     {
+        if (hand == null ||
+            hand.Count == 0)
+        {
+            return null;
+        }
+
         List<CardData> playable =
             new List<CardData>();
 
         foreach (CardData card in hand)
         {
-            if (card.CanPlay(topCard))
+            if (card != null &&
+                card.CanPlay(topCard))
+            {
                 playable.Add(card);
+            }
         }
 
         if (playable.Count == 0)
             return null;
 
-        // Prefer normal number cards.
+        // Prefer normal cards.
         foreach (CardData card in playable)
         {
-            if (card.type == CardType.Number)
+            if (card.type ==
+                CardType.Number)
+            {
                 return card;
+            }
         }
 
         // Otherwise play the first special.
         return playable[0];
     }
 
-    public bool ShouldChallenge(int difficulty)
+    public bool ShouldChallenge(
+        int difficulty)
     {
         float chance =
             Mathf.Clamp(
                 challengeChance -
                 difficulty * 0.15f,
                 0.10f,
-                0.75f);
+                0.75f
+            );
 
         return Random.value < chance;
     }
 
-    public bool SimulateMinigame(int difficulty)
+    public bool SimulateMinigame(
+        int difficulty)
     {
         float winChance =
             Mathf.Clamp(
                 0.90f -
                 difficulty * 0.18f,
                 0.05f,
-                0.90f);
+                0.90f
+            );
 
         bool result =
             Random.value < winChance;
@@ -64,7 +80,8 @@ public class AIOpponent : MonoBehaviour
         Debug.Log(
             $"{opponentName} challenge: " +
             $"{(result ? "WIN" : "LOSE")} " +
-            $"at difficulty {difficulty}");
+            $"at difficulty {difficulty}"
+        );
 
         return result;
     }
