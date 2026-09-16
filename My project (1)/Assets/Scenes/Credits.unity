@@ -193,15 +193,16 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   m_text: "ONU!\r\n\r\nCREATED BY\r\nLauhkea Lepakko\r\n\r\nGAME DESIGN\r\nMiska
-    Partinen\r\n\r\nPROGRAMMING\r\nAlex Khan\nIlo Niinikangas\nMiska Partinen\r\n\r\nART
-    & VISUALS\r\nMiska Partinen\r\nIlo Niinikangas\n\r\nANIMATION\r\nMiska Partinen\r\n\r\nMUSIC\r\nPaulYudin\r\n\r\nSOUND
-    EFFECTS\r\nNull\r\n\r\nWRITING / STORY\r\nMiska Partinen\r\n\r\nVOICE ACTING\r\n-
-    Host_1: Alex Khan\r\n- Host_2: Miska Partinen\n- Host_3: Ilo Niinikangas\r\n\r\nVOICE
-    DIRECTION\r\nAlex Khan\r\n\r\nLOCALIZATION / TRANSLATION\r\nIlo Niinikangas\r\n\r\nUI/UX
-    DESIGN\r\nIlo Niinikangas\r\n\r\nPLAYTESTING\r\nRoni Sundstr\xF6m\r\n\r\nCOMMUNITY
-    & SOCIAL MEDIA\r\nArtstation: Inkrelo\r\n\r\nSPECIAL THANKS\r\nA.R.S|T. - School
-    Assets\r\n\r\nMADE WITH\r\nUnity, Blender\r\n\r\nINSPIRED BY\r\nUno\r\n\r\n\xA9
-    2026 Fullmetal Games. All Rights Reserved.\r\n\r\nTHANKS FOR PLAYING"
+    Partinen\r\n\r\nPROGRAMMING\r\nAlex Khan\nIlo Niinikangas\nMiska Partinen\n\nAI
+    DESIGN\nAlex Khan\r\n\r\nART & VISUALS\r\nMiska Partinen\r\nIlo Niinikangas\n\r\nANIMATION\r\nMiska
+    Partinen\r\n\r\nMUSIC\r\nPaulYudin\r\n\r\nSOUND EFFECTS\r\nNull\r\n\r\nWRITING
+    / STORY\r\nMiska Partinen\r\n\r\nVOICE ACTING\r\n- Host_1: Alex Khan\r\n- Host_2:
+    Miska Partinen\n- Host_3: Ilo Niinikangas\r\n\r\nVOICE DIRECTION\r\nAlex Khan\r\n\r\nLOCALIZATION
+    / TRANSLATION\r\nIlo Niinikangas\r\n\r\nUI/UX DESIGN\r\nIlo Niinikangas\r\n\r\nPLAYTESTING\r\nRoni
+    Sundstr\xF6m\r\n\r\nCOMMUNITY & SOCIAL MEDIA\r\nArtstation: Inkrelo\r\n\r\nSPECIAL
+    THANKS\r\nA.R.S|T. - School Assets\r\n\r\nMADE WITH\r\nUnity, Blender\r\n\r\nINSPIRED
+    BY\r\nUno\r\n\r\n\xA9 2026 Fullmetal Games. All Rights Reserved.\r\n\r\nTHANKS
+    FOR PLAYING"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
