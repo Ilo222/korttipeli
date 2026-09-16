@@ -5,9 +5,12 @@ using UnityEngine.InputSystem;
 public class MenuBtn : MonoBehaviour
 {
     [Header("Skenejen nimet")]
-    public string mainSceneName = "MiskaMain";
+    public string mainSceneName = "Cutscene";
     public string howToPlaySceneName = "HowtoplayScene";
     public string mainMenuSceneName = "MainMenu";
+    public string CreditsSceneName = "Credits";
+
+
 
     public void GotoMainScene()
     {
@@ -24,6 +27,12 @@ public class MenuBtn : MonoBehaviour
         SceneManager.LoadScene(mainMenuSceneName);
     }
 
+
+    public void GotoCreditsScene()
+    {
+        SceneManager.LoadScene(CreditsSceneName);
+    }
+
     public void ExitMenu()
     {
         Application.Quit();
@@ -31,7 +40,7 @@ public class MenuBtn : MonoBehaviour
 
     void Update()
     {
-        // ESC-n‰pp‰in palauttaa p‰‰valikkoon ilman virheit‰
+        
         if (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame)
         {
             SceneManager.LoadScene(mainMenuSceneName);
