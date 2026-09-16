@@ -14,14 +14,13 @@ public class CardInputController : MonoBehaviour
     private void Start()
     {
         if (gameplayCamera == null)
-        {
             gameplayCamera = Camera.main;
-        }
 
         if (gameplayCamera == null)
         {
             Debug.LogError(
-                "CardInputController: No gameplay camera found."
+                "CardInputController: " +
+                "No gameplay camera found."
             );
         }
     }
@@ -33,10 +32,12 @@ public class CardInputController : MonoBehaviour
 
         UpdateHover();
 
-        if (Mouse.current != null &&
-            Mouse.current.leftButton.wasPressedThisFrame)
+        if (Mouse.current == null)
+            return;
+
+        if (Mouse.current.leftButton.wasPressedThisFrame)
         {
-            TryClickCard();
+            TryClick();
         }
     }
 
@@ -49,16 +50,12 @@ public class CardInputController : MonoBehaviour
             return;
 
         if (hoveredCard != null)
-        {
             hoveredCard.SetHovered(false);
-        }
 
         hoveredCard = newCard;
 
         if (hoveredCard != null)
-        {
             hoveredCard.SetHovered(true);
-        }
     }
 
     private Card3D FindCardUnderMouse()
@@ -78,12 +75,9 @@ public class CardInputController : MonoBehaviour
         if (Mouse.current == null)
             return null;
 
-        Vector2 mousePosition =
-            Mouse.current.position.ReadValue();
-
         Ray ray =
             gameplayCamera.ScreenPointToRay(
-                mousePosition
+                Mouse.current.position.ReadValue()
             );
 
         RaycastHit[] hits =
@@ -92,30 +86,20 @@ public class CardInputController : MonoBehaviour
                 rayDistance
             );
 
-        if (hits == null ||
-            hits.Length == 0)
-        {
-            return null;
-        }
-
         Card3D bestCard = null;
-
-        float bestDistance =
-            float.MaxValue;
+        float bestDistance = float.MaxValue;
 
         foreach (RaycastHit hit in hits)
         {
             Card3D card =
-                hit.collider.GetComponentInParent<Card3D>();
+                hit.collider
+                    .GetComponentInParent<Card3D>();
 
             if (card == null)
                 continue;
 
-            if (!GameManager.Instance
-                .IsPlayerCard(card))
-            {
+            if (!GameManager.Instance.IsPlayerCard(card))
                 continue;
-            }
 
             if (hit.distance < bestDistance)
             {
@@ -130,15 +114,86 @@ public class CardInputController : MonoBehaviour
         return bestCard;
     }
 
-    private void TryClickCard()
+    private void TryClick()
     {
-        Card3D card =
-            FindCardUnderMouse();
-
-        if (card == null)
+        if (gameplayCamera == null)
             return;
 
-        GameManager.Instance.PlayCard(card);
+        if (GameManager.Instance.state !=
+            GameState.Playing)
+        {
+            return;
+        }
+
+        if (!GameManager.Instance.PlayerTurn)
+            return;
+
+        Ray ray =
+            gameplayCamera.ScreenPointToRay(
+                Mouse.current.position.ReadValue()
+            );
+
+        RaycastHit[] hits =
+            Physics.RaycastAll(
+                ray,
+                rayDistance
+            );
+
+        Card3D bestCard = null;
+        float bestCardDistance = float.MaxValue;
+
+        DrawPile drawPile = null;
+        float drawPileDistance = float.MaxValue;
+
+        foreach (RaycastHit hit in hits)
+        {
+            Card3D card =
+                hit.collider
+                    .GetComponentInParent<Card3D>();
+
+            if (card != null &&
+                GameManager.Instance.IsPlayerCard(card))
+            {
+                if (hit.distance < bestCardDistance)
+                {
+                    bestCardDistance =
+                        hit.distance;
+
+                    bestCard =
+                        card;
+                }
+
+                continue;
+            }
+
+            DrawPile pile =
+                hit.collider
+                    .GetComponentInParent<DrawPile>();
+
+            if (pile != null &&
+                hit.distance < drawPileDistance)
+            {
+                drawPileDistance =
+                    hit.distance;
+
+                drawPile =
+                    pile;
+            }
+        }
+
+        if (bestCard != null)
+        {
+            GameManager.Instance.PlayCard(
+                bestCard
+            );
+
+            return;
+        }
+
+        if (drawPile != null)
+        {
+            GameManager.Instance.PlayerDrawCard();
+        }
     }
 
     private void OnDisable()

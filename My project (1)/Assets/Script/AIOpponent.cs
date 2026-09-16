@@ -3,10 +3,10 @@ using UnityEngine;
 
 public class AIOpponent : MonoBehaviour
 {
-    [Header("AI Identity")]
+    [Header("Identity")]
     public string opponentName = "AI";
 
-    [Header("AI Difficulty")]
+    [Header("Challenge Behavior")]
     [Range(0.1f, 1f)]
     public float challengeChance = 0.75f;
 
@@ -35,7 +35,7 @@ public class AIOpponent : MonoBehaviour
         if (playable.Count == 0)
             return null;
 
-        // Prefer normal cards.
+        // Prefer normal number cards.
         foreach (CardData card in playable)
         {
             if (card.type ==
@@ -45,7 +45,7 @@ public class AIOpponent : MonoBehaviour
             }
         }
 
-        // Otherwise play the first special.
+        // Otherwise use a special.
         return playable[0];
     }
 
@@ -74,15 +74,6 @@ public class AIOpponent : MonoBehaviour
                 0.90f
             );
 
-        bool result =
-            Random.value < winChance;
-
-        Debug.Log(
-            $"{opponentName} challenge: " +
-            $"{(result ? "WIN" : "LOSE")} " +
-            $"at difficulty {difficulty}"
-        );
-
-        return result;
+        return Random.value < winChance;
     }
 }

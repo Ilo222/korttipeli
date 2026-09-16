@@ -14,11 +14,14 @@ public class AIHandLayout : MonoBehaviour
     [Header("Height")]
     [SerializeField] private float cardHeight = 0.04f;
 
-    public void UpdateAIHand(List<Card3D> cards)
+    public void UpdateAIHand(
+        List<Card3D> cards)
     {
         if (cards == null ||
             cards.Count == 0)
+        {
             return;
+        }
 
         int count = cards.Count;
 
@@ -38,9 +41,12 @@ public class AIHandLayout : MonoBehaviour
                 );
         }
 
-        for (int i = 0; i < count; i++)
+        for (int i = 0;
+             i < count;
+             i++)
         {
-            Card3D card3D = cards[i];
+            Card3D card3D =
+                cards[i];
 
             if (card3D == null)
                 continue;
@@ -48,7 +54,8 @@ public class AIHandLayout : MonoBehaviour
             card3D.SetHovered(false);
 
             float offset =
-                i - (count - 1) / 2f;
+                i -
+                (count - 1) / 2f;
 
             float x =
                 offset * spacing;
@@ -56,7 +63,9 @@ public class AIHandLayout : MonoBehaviour
             Transform card =
                 card3D.transform;
 
-            card.SetParent(transform);
+            card.SetParent(
+                transform
+            );
 
             card.localPosition =
                 new Vector3(

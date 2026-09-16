@@ -4,11 +4,8 @@ public class MinigameManager : MonoBehaviour
 {
     public static MinigameManager Instance;
 
-    [Header("Difficulty")]
-    [SerializeField] private int currentDifficulty = 1;
-
-    public int CurrentDifficulty =>
-        currentDifficulty;
+    [Header("Challenge Settings")]
+    public int currentDifficulty = 1;
 
     private CardColor challengeColor;
     private bool challengerIsPlayer;
@@ -18,32 +15,54 @@ public class MinigameManager : MonoBehaviour
         Instance = this;
     }
 
+    // =========================================================
+    // START CHALLENGE
+    // =========================================================
+
     public void StartChallenge(
         CardColor color,
         bool playerIsChallenger)
     {
         challengeColor = color;
-        challengerIsPlayer =
-            playerIsChallenger;
+        challengerIsPlayer = playerIsChallenger;
+
+        Debug.Log(
+            "MinigameManager: Challenge started. " +
+            "Color = " + color +
+            ", Player Challenger = " + playerIsChallenger +
+            ", Difficulty = " + currentDifficulty
+        );
 
         if (TransitionManager.Instance == null)
         {
             Debug.LogError(
-                "MinigameManager: " +
-                "TransitionManager is missing."
+                "MinigameManager: TransitionManager.Instance is missing."
             );
 
             return;
         }
 
-        TransitionManager.Instance
-            .StartChallenge(
-                GetInstruction(color)
-            );
+        string instruction = GetInstruction(color);
+
+        TransitionManager.Instance.StartChallenge(
+            color,
+            instruction
+        );
     }
+
+    // =========================================================
+    // START ACTUAL MINIGAME
+    // =========================================================
 
     public void StartActualMinigame()
     {
+        Debug.Log(
+            "MinigameManager: Starting actual minigame. " +
+            challengeColor +
+            " | Difficulty " +
+            currentDifficulty
+        );
+
         switch (challengeColor)
         {
             case CardColor.Yellow:
@@ -61,97 +80,221 @@ public class MinigameManager : MonoBehaviour
             case CardColor.Purple:
                 StartKnowledgeGame();
                 break;
+
+            case CardColor.Wild:
+                StartKnowledgeGame();
+                break;
+
+            default:
+                Debug.LogWarning(
+                    "MinigameManager: Unknown challenge color."
+                );
+                break;
         }
     }
 
-    private string GetInstruction(
-        CardColor color)
+    // =========================================================
+    // GET INSTRUCTION
+    // =========================================================
+
+    private string GetInstruction(CardColor color)
     {
         switch (color)
         {
             case CardColor.Yellow:
-                return "ADD THE DICE!";
+                return GetSpeedInstruction();
 
             case CardColor.Red:
-                return "KEEP BALANCE!";
+                return GetPhysicalInstruction();
 
             case CardColor.Green:
-                return "PICK THE HAT!";
+                return GetLuckInstruction();
 
             case CardColor.Purple:
-                return "ANSWER!";
+                return GetKnowledgeInstruction();
+
+            case CardColor.Wild:
+                return "GET READY!";
 
             default:
-                return "CHALLENGE!";
+                return "GET READY!";
         }
     }
+
+    // =========================================================
+    // SPEED INSTRUCTION
+    // =========================================================
+
+    private string GetSpeedInstruction()
+    {
+        return "ADD THE DICE AS FAST AS YOU CAN!";
+    }
+
+    // =========================================================
+    // PHYSICAL INSTRUCTION
+    // =========================================================
+
+    private string GetPhysicalInstruction()
+    {
+        return "KEEP YOUR BALANCE!";
+    }
+
+    // =========================================================
+    // LUCK INSTRUCTION
+    // =========================================================
+
+    private string GetLuckInstruction()
+    {
+        return "TEST YOUR LUCK!";
+    }
+
+    // =========================================================
+    // KNOWLEDGE INSTRUCTION
+    // =========================================================
+
+    private string GetKnowledgeInstruction()
+    {
+        return "ANSWER THE QUESTION!";
+    }
+
+    // =========================================================
+    // SPEED MINIGAME
+    // =========================================================
 
     private void StartSpeedGame()
     {
         Debug.Log(
-            $"Starting SPEED challenge " +
-            $"at level {currentDifficulty}"
+            "MinigameManager: SPEED minigame started. " +
+            "Difficulty = " +
+            currentDifficulty
         );
+
+        // Actual Speed minigame will be started here.
+        //
+        // Yellow = Speed
+        // Dice addition challenge.
     }
+
+    // =========================================================
+    // PHYSICAL MINIGAME
+    // =========================================================
 
     private void StartPhysicalGame()
     {
         Debug.Log(
-            $"Starting PHYSICAL challenge " +
-            $"at level {currentDifficulty}"
+            "MinigameManager: PHYSICAL minigame started. " +
+            "Difficulty = " +
+            currentDifficulty
         );
+
+        // Actual Physical minigame will be started here.
+        //
+        // Red = Physical
+        // Balance challenge.
     }
+
+    // =========================================================
+    // LUCK MINIGAME
+    // =========================================================
 
     private void StartLuckGame()
     {
         Debug.Log(
-            $"Starting LUCK challenge " +
-            $"at level {currentDifficulty}"
+            "MinigameManager: LUCK minigame started. " +
+            "Difficulty = " +
+            currentDifficulty
         );
+
+        // Actual Luck minigame will be started here.
+        //
+        // Green = Luck
+        // Chance / hats / coin-style challenge.
     }
+
+    // =========================================================
+    // KNOWLEDGE MINIGAME
+    // =========================================================
 
     private void StartKnowledgeGame()
     {
         Debug.Log(
-            $"Starting KNOWLEDGE challenge " +
-            $"at level {currentDifficulty}"
+            "MinigameManager: KNOWLEDGE minigame started. " +
+            "Difficulty = " +
+            currentDifficulty
         );
+
+        // Actual Knowledge minigame will be started here.
+        //
+        // Purple = Knowledge
+        // Trivia / question challenge.
     }
 
-    public bool SimulateAIResult()
-    {
-        float winChance =
-            Mathf.Clamp(
-                0.90f -
-                currentDifficulty * 0.18f,
-                0.05f,
-                0.90f
-            );
+    // =========================================================
+    // MINIGAME COMPLETED
+    // =========================================================
 
-        return Random.value < winChance;
-    }
-
-    public void OnMinigameCompleted(
-        bool challengerWon)
+    public void OnMinigameCompleted()
     {
+        Debug.Log(
+            "MinigameManager: Minigame completed."
+        );
+
+        // Increase difficulty for the next challenge.
         currentDifficulty++;
 
-        if (GameManager.Instance != null)
+        // Return from the minigame camera/table
+        // back to the main game.
+        if (TransitionManager.Instance != null)
         {
-            GameManager.Instance
-                .ChallengeFinished(
-                    challengerWon
-                );
+            TransitionManager.Instance.EndChallenge();
         }
+        else
+        {
+            Debug.LogWarning(
+                "MinigameManager: TransitionManager.Instance " +
+                "was not found while ending minigame."
+            );
+        }
+
+        /*
+         * IMPORTANT:
+         *
+         * We do NOT call:
+         *
+         * GameManager.Instance.OnMinigameFinished();
+         *
+         * because your current GameManager does not contain
+         * that method.
+         *
+         * We will connect the minigame result back into the
+         * normal turn system when we update GameManager.
+         */
     }
+
+    // =========================================================
+    // GET CURRENT CHALLENGE COLOR
+    // =========================================================
 
     public CardColor GetChallengeColor()
     {
         return challengeColor;
     }
 
+    // =========================================================
+    // IS PLAYER THE CHALLENGER?
+    // =========================================================
+
     public bool IsPlayerChallenger()
     {
         return challengerIsPlayer;
+    }
+
+    // =========================================================
+    // GET DIFFICULTY
+    // =========================================================
+
+    public int GetCurrentDifficulty()
+    {
+        return currentDifficulty;
     }
 }

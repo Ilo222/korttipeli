@@ -942,6 +942,7 @@ MonoBehaviour:
   maximumHandWidth: 5.5
   cardHeight: 0.04
   centerLift: 0.15
+  movementSpeed: 12
 --- !u!4 &216599624
 Transform:
   m_ObjectHideFlags: 0
@@ -1930,6 +1931,11 @@ Camera:
   m_OcclusionCulling: 1
   m_StereoConvergence: 10
   m_StereoSeparation: 0.022
+--- !u!1 &735857507 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 100000, guid: 0699d22803476344d956abf42dc88970, type: 3}
+  m_PrefabInstance: {fileID: 2131362531}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &739514291
 GameObject:
   m_ObjectHideFlags: 0
@@ -2082,7 +2088,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &775849705
 Transform:
   m_ObjectHideFlags: 0
@@ -2383,12 +2389,27 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::TransitionManager
   topDownCamera: {fileID: 507240821}
   wideCamera: {fileID: 930659230}
-  minigameCamera: {fileID: 0}
+  knowledgeCamera: {fileID: 739514295}
+  speedCamera: {fileID: 1686264470}
+  physicalCamera: {fileID: 720834202}
+  luckCamera: {fileID: 153485644}
+  knowledgeTable: {fileID: 2022087762}
+  speedTable: {fileID: 735857507}
+  physicalTable: {fileID: 1772932687}
+  luckTable: {fileID: 865312128}
   minigamePanel: {fileID: 0}
+  instructionText: {fileID: 0}
   countdownText: {fileID: 0}
-  wideHoldTime: 1.2
-  minigameHoldTime: 0.8
-  panelSlideTime: 0.3
+  wideViewDuration: 0.6
+  panelSlideDuration: 0.25
+  countdownStartDelay: 0.2
+  countdownStepDuration: 0.7
+  goDuration: 0.35
+  returnDelay: 0.5
+  panelHiddenPosition: {x: -2500, y: 0}
+  panelShownPosition: {x: 0, y: 0}
+  topDownPriority: 100
+  widePriority: 110
 --- !u!114 &844354235
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2438,6 +2459,13 @@ MonoBehaviour:
   colorChangeCopies: 1
   drawPileVisualCards: 8
   drawPileCardOffset: 0.015
+  maximumPlayerDraws: 3
+  drawAnimationTime: 0.22
+  drawArcHeight: 0.6
+  playAnimationTime: 0.25
+  playArcHeight: 0.45
+  playSpinDegrees: 90
+  aiThinkingTime: 0.35
   playerHand: []
   ai1Hand: []
   ai2Hand: []
@@ -2577,6 +2605,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4035eda2f71b866418ea538e2dd19778, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DrawPile
+--- !u!1 &865312128 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 100000, guid: 0699d22803476344d956abf42dc88970, type: 3}
+  m_PrefabInstance: {fileID: 1797598815}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &871562936
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -2908,7 +2941,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &1033866380
 Transform:
   m_ObjectHideFlags: 0
@@ -3080,7 +3113,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &1045529207
 Transform:
   m_ObjectHideFlags: 0
@@ -5737,6 +5770,11 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1747415102}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!1 &1772932687 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 100000, guid: 0699d22803476344d956abf42dc88970, type: 3}
+  m_PrefabInstance: {fileID: 100020071}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &1797598815
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -5830,7 +5868,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &1800223905
 Transform:
   m_ObjectHideFlags: 0
@@ -6268,6 +6306,11 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1899982806}
   m_CullTransparentMesh: 1
+--- !u!1 &2022087762 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 100000, guid: 0699d22803476344d956abf42dc88970, type: 3}
+  m_PrefabInstance: {fileID: 191418269}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &2037452885
 GameObject:
   m_ObjectHideFlags: 0

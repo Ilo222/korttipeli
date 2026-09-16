@@ -39,7 +39,7 @@ public class GameManager : MonoBehaviour
     [Header("UI")]
     [SerializeField] private TextMeshProUGUI turnText;
 
-    [Header("Deck")]
+    [Header("Starting Hand")]
     [SerializeField] private int startingCards = 7;
 
     [Header("Special Card Counts")]
@@ -50,8 +50,22 @@ public class GameManager : MonoBehaviour
     [SerializeField] private int colorChangeCopies = 1;
 
     [Header("Draw Pile Visual")]
-    [SerializeField] private int drawPileVisualCards = 8;
+    [SerializeField] private int drawPileVisualCards = 10;
     [SerializeField] private float drawPileCardOffset = 0.015f;
+
+    [Header("Draw Rules")]
+    [SerializeField] private int maximumPlayerDraws = 3;
+
+    [Header("Card Animations")]
+    [SerializeField] private float drawAnimationTime = 0.22f;
+    [SerializeField] private float drawArcHeight = 0.60f;
+
+    [SerializeField] private float playAnimationTime = 0.25f;
+    [SerializeField] private float playArcHeight = 0.45f;
+    [SerializeField] private float playSpinDegrees = 90f;
+
+    [Header("AI")]
+    [SerializeField] private float aiThinkingTime = 0.35f;
 
     [Header("Hands")]
     public List<CardData> playerHand =
@@ -79,7 +93,7 @@ public class GameManager : MonoBehaviour
     public List<Card3D> ai3VisualCards =
         new List<Card3D>();
 
-    [Header("Deck State")]
+    [Header("Deck")]
     public List<CardData> deck =
         new List<CardData>();
 
@@ -89,12 +103,14 @@ public class GameManager : MonoBehaviour
     public int currentPlayerIndex = 0;
 
     // 0 = Player
-    // 1 = AI1
-    // 2 = AI2
-    // 3 = AI3
+    // 1 = AI 1
+    // 2 = AI 2
+    // 3 = AI 3
 
     public bool PlayerTurn =>
         currentPlayerIndex == 0;
+
+    private int playerDrawCount;
 
     private Card3D currentDiscardVisual;
 
@@ -118,20 +134,18 @@ public class GameManager : MonoBehaviour
 
     public void StartGame()
     {
-        state = GameState.Playing;
-
         StopAllCoroutines();
+
+        state = GameState.Playing;
+        currentPlayerIndex = 0;
+        playerDrawCount = 0;
 
         BuildDeck();
         ShuffleDeck();
 
         DealInitialHands();
-
         PlaceStartingCard();
-
         SpawnDrawPileVisual();
-
-        currentPlayerIndex = 0;
 
         RefreshAllHands();
         UpdateTurnUI();
@@ -157,11 +171,10 @@ public class GameManager : MonoBehaviour
             CardColor.Red
         };
 
+        // Number cards 0-4.
         foreach (CardColor color in colors)
         {
-            for (int number = 0;
-                 number <= 4;
-                 number++)
+            for (int number = 0; number <= 4; number++)
             {
                 deck.Add(
                     new CardData(
@@ -215,9 +228,7 @@ public class GameManager : MonoBehaviour
             CardColor.Red
         };
 
-        for (int i = 0;
-             i < copies;
-             i++)
+        for (int i = 0; i < copies; i++)
         {
             foreach (CardColor color in colors)
             {
@@ -234,15 +245,10 @@ public class GameManager : MonoBehaviour
 
     private void ShuffleDeck()
     {
-        for (int i = deck.Count - 1;
-             i > 0;
-             i--)
+        for (int i = deck.Count - 1; i > 0; i--)
         {
             int random =
-                Random.Range(
-                    0,
-                    i + 1
-                );
+                Random.Range(0, i + 1);
 
             CardData temp =
                 deck[i];
@@ -256,7 +262,7 @@ public class GameManager : MonoBehaviour
     }
 
     // ============================================================
-    // DEALING
+    // INITIAL DEAL
     // ============================================================
 
     private void DealInitialHands()
@@ -268,14 +274,12 @@ public class GameManager : MonoBehaviour
 
         DestroyAllHandVisuals();
 
-        for (int i = 0;
-             i < startingCards;
-             i++)
+        for (int i = 0; i < startingCards; i++)
         {
-            DrawToPlayer();
-            DrawToAI1();
-            DrawToAI2();
-            DrawToAI3();
+            DrawToPlayerImmediate();
+            DrawToAIImmediate(1);
+            DrawToAIImmediate(2);
+            DrawToAIImmediate(3);
         }
     }
 
@@ -288,7 +292,7 @@ public class GameManager : MonoBehaviour
         if (deck.Count == 0)
         {
             Debug.LogWarning(
-                "Deck is empty."
+                "Draw pile is empty."
             );
 
             return null;
@@ -305,7 +309,11 @@ public class GameManager : MonoBehaviour
         return card;
     }
 
-    private void DrawToPlayer()
+    // ============================================================
+    // INITIAL HAND DRAW
+    // ============================================================
+
+    private void DrawToPlayerImmediate()
     {
         CardData card =
             DrawFromDeck();
@@ -323,13 +331,12 @@ public class GameManager : MonoBehaviour
 
         if (visual != null)
         {
-            playerVisualCards.Add(
-                visual
-            );
+            playerVisualCards.Add(visual);
         }
     }
 
-    private void DrawToAI1()
+    private void DrawToAIImmediate(
+        int playerIndex)
     {
         CardData card =
             DrawFromDeck();
@@ -337,67 +344,33 @@ public class GameManager : MonoBehaviour
         if (card == null)
             return;
 
-        ai1Hand.Add(card);
+        List<CardData> hand =
+            GetAIHand(playerIndex);
 
-        Card3D visual =
-            SpawnHandCard(
-                card,
-                ai1HandCenter
-            );
+        List<Card3D> visuals =
+            GetAIVisuals(playerIndex);
 
-        if (visual != null)
+        Transform center =
+            GetAIHandCenter(playerIndex);
+
+        if (hand == null ||
+            visuals == null ||
+            center == null)
         {
-            ai1VisualCards.Add(
-                visual
-            );
-        }
-    }
-
-    private void DrawToAI2()
-    {
-        CardData card =
-            DrawFromDeck();
-
-        if (card == null)
             return;
-
-        ai2Hand.Add(card);
-
-        Card3D visual =
-            SpawnHandCard(
-                card,
-                ai2HandCenter
-            );
-
-        if (visual != null)
-        {
-            ai2VisualCards.Add(
-                visual
-            );
         }
-    }
 
-    private void DrawToAI3()
-    {
-        CardData card =
-            DrawFromDeck();
-
-        if (card == null)
-            return;
-
-        ai3Hand.Add(card);
+        hand.Add(card);
 
         Card3D visual =
             SpawnHandCard(
                 card,
-                ai3HandCenter
+                center
             );
 
         if (visual != null)
         {
-            ai3VisualCards.Add(
-                visual
-            );
+            visuals.Add(visual);
         }
     }
 
@@ -409,18 +382,13 @@ public class GameManager : MonoBehaviour
     {
         CardData startingCard = null;
 
-        for (int i = deck.Count - 1;
-             i >= 0;
-             i--)
+        // Start with a number card.
+        for (int i = deck.Count - 1; i >= 0; i--)
         {
-            if (deck[i].type ==
-                CardType.Number)
+            if (deck[i].type == CardType.Number)
             {
-                startingCard =
-                    deck[i];
-
+                startingCard = deck[i];
                 deck.RemoveAt(i);
-
                 break;
             }
         }
@@ -428,7 +396,7 @@ public class GameManager : MonoBehaviour
         if (startingCard == null)
         {
             Debug.LogError(
-                "Could not find starting number card."
+                "Could not find starting card."
             );
 
             return;
@@ -437,19 +405,860 @@ public class GameManager : MonoBehaviour
         currentTopCard =
             startingCard;
 
-        Debug.Log(
-            $"Starting discard: " +
-            $"{startingCard.color} " +
-            $"{startingCard.number}"
-        );
-
         SpawnDiscardCard(
             startingCard
         );
     }
 
     // ============================================================
-    // HAND CARD SPAWN
+    // PLAYER PLAY
+    // ============================================================
+
+    public void PlayCard(
+        Card3D clickedCard)
+    {
+        if (state != GameState.Playing)
+            return;
+
+        if (!PlayerTurn)
+            return;
+
+        if (clickedCard == null)
+            return;
+
+        if (clickedCard.data == null)
+            return;
+
+        if (!clickedCard.data.CanPlay(
+                currentTopCard))
+        {
+            Debug.Log(
+                "That card cannot be played."
+            );
+
+            return;
+        }
+
+        StartCoroutine(
+            PlayCardRoutine(
+                clickedCard
+            )
+        );
+    }
+
+    private IEnumerator PlayCardRoutine(
+        Card3D clickedCard)
+    {
+        state =
+            GameState.ResolvingChallenge;
+
+        CardData playedCard =
+            clickedCard.data;
+
+        // Remove from logical hand.
+        playerHand.Remove(
+            playedCard
+        );
+
+        // Remove from visual hand.
+        playerVisualCards.Remove(
+            clickedCard
+        );
+
+        clickedCard.SetHovered(false);
+        clickedCard.SetAnimationLocked(true);
+
+        // Remove old discard visual.
+        if (currentDiscardVisual != null)
+        {
+            Destroy(
+                currentDiscardVisual.gameObject
+            );
+
+            currentDiscardVisual = null;
+        }
+
+        // Save where card starts.
+        Vector3 startPosition =
+            clickedCard.transform.position;
+
+        Quaternion startRotation =
+            clickedCard.transform.rotation;
+
+        // Detach from hand.
+        clickedCard.transform.SetParent(
+            null,
+            true
+        );
+
+        Vector3 targetPosition =
+            discardPilePosition.position;
+
+        Quaternion targetRotation =
+            discardPilePosition.rotation;
+
+        // Animate from hand to discard.
+        yield return AnimatePlayCard(
+            clickedCard,
+            startPosition,
+            startRotation,
+            targetPosition,
+            targetRotation
+        );
+
+        // Put it under discard pile.
+        clickedCard.transform.SetParent(
+            discardPilePosition,
+            true
+        );
+
+        clickedCard.transform.position =
+            targetPosition;
+
+        clickedCard.transform.rotation =
+            targetRotation;
+
+        clickedCard.transform.localScale =
+            Vector3.one;
+
+        clickedCard.SetAnimationLocked(false);
+
+        clickedCard.CaptureCurrentTransformAsNormal();
+
+        DisableCardColliders(
+            clickedCard.gameObject
+        );
+
+        currentDiscardVisual =
+            clickedCard;
+
+        currentTopCard =
+            playedCard;
+
+        // The player's draw counter resets
+        // after actually playing a card.
+        playerDrawCount = 0;
+
+        // Remaining cards slide into their
+        // new hand positions.
+        RefreshAllHands();
+
+        // For now specials still just advance.
+        // We will replace this with the special
+        // card system next.
+        ResolvePlayedCard(
+            playedCard,
+            0
+        );
+    }
+
+    // ============================================================
+    // PLAYER DRAW
+    // ============================================================
+
+    public void PlayerDrawCard()
+    {
+        if (state != GameState.Playing)
+            return;
+
+        if (!PlayerTurn)
+            return;
+
+        if (playerDrawCount >= maximumPlayerDraws)
+        {
+            Debug.Log(
+                "You have already drawn 3 cards."
+            );
+
+            return;
+        }
+
+        StartCoroutine(
+            PlayerDrawCardRoutine()
+        );
+    }
+
+    private IEnumerator PlayerDrawCardRoutine()
+    {
+        state =
+            GameState.ResolvingChallenge;
+
+        playerDrawCount++;
+
+        CardData drawnCard =
+            DrawFromDeck();
+
+        if (drawnCard == null)
+        {
+            state =
+                GameState.Playing;
+
+            yield break;
+        }
+
+        // Create visual first.
+        Card3D visual =
+            SpawnHandCard(
+                drawnCard,
+                playerHandCenter
+            );
+
+        if (visual == null)
+        {
+            state =
+                GameState.Playing;
+
+            yield break;
+        }
+
+        playerHand.Add(
+            drawnCard
+        );
+
+        playerVisualCards.Add(
+            visual
+        );
+
+        // Temporarily calculate the final hand position.
+        RefreshAllHands();
+
+        Vector3 finalWorldPosition =
+            visual.transform.position;
+
+        Quaternion finalWorldRotation =
+            visual.transform.rotation;
+
+        // Detach before flying.
+        visual.transform.SetParent(
+            null,
+            true
+        );
+
+        visual.SetAnimationLocked(true);
+
+        // Start at the draw pile.
+        Vector3 startPosition =
+            drawPilePosition.position;
+
+        startPosition.y += 0.15f;
+
+        Quaternion startRotation =
+            drawPilePosition.rotation;
+
+        visual.transform.position =
+            startPosition;
+
+        visual.transform.rotation =
+            startRotation;
+
+        visual.transform.localScale =
+            Vector3.one;
+
+        // Start hidden.
+        visual.SetCardBackVisible(true);
+
+        // Animate.
+        yield return AnimateDrawCard(
+            visual,
+            startPosition,
+            startRotation,
+            finalWorldPosition,
+            finalWorldRotation
+        );
+
+        // Reattach to the hand.
+        visual.transform.SetParent(
+            playerHandCenter,
+            true
+        );
+
+        visual.transform.position =
+            finalWorldPosition;
+
+        visual.transform.rotation =
+            finalWorldRotation;
+
+        visual.transform.localScale =
+            Vector3.one;
+
+        visual.SetCardBackVisible(false);
+
+        visual.SetAnimationLocked(false);
+
+        visual.CaptureCurrentTransformAsNormal();
+
+        RefreshAllHands();
+
+        bool playable =
+            HasPlayableCard(
+                playerHand
+            );
+
+        // Three draws with no playable card.
+        if (playerDrawCount >= maximumPlayerDraws &&
+            !playable)
+        {
+            Debug.Log(
+                "Drew 3 cards without finding " +
+                "a playable card. Turn skipped."
+            );
+
+            playerDrawCount = 0;
+
+            GoToNextPlayer();
+
+            yield break;
+        }
+
+        // Player remains in control.
+        state =
+            GameState.Playing;
+
+        UpdateTurnUI();
+    }
+
+    // ============================================================
+    // DRAW ANIMATION
+    // ============================================================
+
+    private IEnumerator AnimateDrawCard(
+        Card3D card,
+        Vector3 startPosition,
+        Quaternion startRotation,
+        Vector3 targetPosition,
+        Quaternion targetRotation)
+    {
+        float timer = 0f;
+
+        while (timer < drawAnimationTime)
+        {
+            float raw =
+                timer /
+                drawAnimationTime;
+
+            float t =
+                Mathf.SmoothStep(
+                    0f,
+                    1f,
+                    raw
+                );
+
+            Vector3 position =
+                Vector3.Lerp(
+                    startPosition,
+                    targetPosition,
+                    t
+                );
+
+            position +=
+                Vector3.up *
+                Mathf.Sin(
+                    t * Mathf.PI
+                ) *
+                drawArcHeight;
+
+            card.transform.position =
+                position;
+
+            card.transform.rotation =
+                Quaternion.Slerp(
+                    startRotation,
+                    targetRotation,
+                    t
+                );
+
+            // Reveal the front halfway through.
+            if (raw >= 0.5f)
+            {
+                card.SetCardBackVisible(false);
+            }
+
+            timer += Time.deltaTime;
+
+            yield return null;
+        }
+
+        card.transform.position =
+            targetPosition;
+
+        card.transform.rotation =
+            targetRotation;
+
+        card.SetCardBackVisible(false);
+    }
+
+    // ============================================================
+    // PLAY ANIMATION
+    // ============================================================
+
+    private IEnumerator AnimatePlayCard(
+        Card3D card,
+        Vector3 startPosition,
+        Quaternion startRotation,
+        Vector3 targetPosition,
+        Quaternion targetRotation)
+    {
+        float timer = 0f;
+
+        while (timer < playAnimationTime)
+        {
+            float raw =
+                timer /
+                playAnimationTime;
+
+            float t =
+                Mathf.SmoothStep(
+                    0f,
+                    1f,
+                    raw
+                );
+
+            Vector3 position =
+                Vector3.Lerp(
+                    startPosition,
+                    targetPosition,
+                    t
+                );
+
+            position +=
+                Vector3.up *
+                Mathf.Sin(
+                    t * Mathf.PI
+                ) *
+                playArcHeight;
+
+            card.transform.position =
+                position;
+
+            Quaternion rotation =
+                Quaternion.Slerp(
+                    startRotation,
+                    targetRotation,
+                    t
+                );
+
+            // Small dramatic spin.
+            rotation *=
+                Quaternion.Euler(
+                    0f,
+                    playSpinDegrees * t,
+                    0f
+                );
+
+            card.transform.rotation =
+                rotation;
+
+            timer += Time.deltaTime;
+
+            yield return null;
+        }
+
+        card.transform.position =
+            targetPosition;
+
+        card.transform.rotation =
+            targetRotation;
+    }
+
+    // ============================================================
+    // PLAYABLE CHECK
+    // ============================================================
+
+    private bool HasPlayableCard(
+        List<CardData> hand)
+    {
+        if (hand == null)
+            return false;
+
+        foreach (CardData card in hand)
+        {
+            if (card != null &&
+                card.CanPlay(currentTopCard))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    // ============================================================
+    // CARD RESOLUTION
+    // ============================================================
+
+    private void ResolvePlayedCard(
+        CardData card,
+        int playedByPlayerIndex)
+    {
+        // Specials are still using the temporary
+        // Joker behavior for now.
+        //
+        // We will replace this with:
+        //
+        // +2 animation
+        // +4 animation
+        // Reverse animation
+        // Skip animation
+        // Color Change animation
+        // Challenge system
+        //
+        // once the normal card loop is working.
+
+        state =
+            GameState.Playing;
+
+        GoToNextPlayer();
+    }
+
+    // ============================================================
+    // TURN SYSTEM
+    // ============================================================
+
+    private void GoToNextPlayer()
+    {
+        currentPlayerIndex =
+            (currentPlayerIndex + 1) % 4;
+
+        if (currentPlayerIndex == 0)
+        {
+            playerDrawCount = 0;
+        }
+
+        state =
+            GameState.Playing;
+
+        UpdateTurnUI();
+
+        if (currentPlayerIndex != 0)
+        {
+            StartCoroutine(
+                RunAITurn()
+            );
+        }
+    }
+
+    // ============================================================
+    // AI TURN
+    // ============================================================
+
+    private IEnumerator RunAITurn()
+    {
+        yield return new WaitForSeconds(
+            aiThinkingTime
+        );
+
+        if (state != GameState.Playing)
+            yield break;
+
+        AIOpponent opponent =
+            GetAI(
+                currentPlayerIndex
+            );
+
+        List<CardData> hand =
+            GetAIHand(
+                currentPlayerIndex
+            );
+
+        Transform handCenter =
+            GetAIHandCenter(
+                currentPlayerIndex
+            );
+
+        List<Card3D> visuals =
+            GetAIVisuals(
+                currentPlayerIndex
+            );
+
+        if (opponent == null ||
+            hand == null ||
+            handCenter == null ||
+            visuals == null)
+        {
+            Debug.LogError(
+                "AI setup is incomplete."
+            );
+
+            GoToNextPlayer();
+
+            yield break;
+        }
+
+        // Try an existing playable card.
+        CardData chosen =
+            opponent.ChooseCard(
+                hand,
+                currentTopCard
+            );
+
+        if (chosen != null)
+        {
+            yield return
+                PlayAICardRoutine(
+                    currentPlayerIndex,
+                    chosen
+                );
+
+            yield break;
+        }
+
+        // AI gets up to 3 draws.
+        for (int draw = 0;
+             draw < maximumPlayerDraws;
+             draw++)
+        {
+            CardData drawn =
+                DrawFromDeck();
+
+            if (drawn == null)
+                break;
+
+            hand.Add(drawn);
+
+            Card3D visual =
+                SpawnHandCard(
+                    drawn,
+                    handCenter
+                );
+
+            if (visual != null)
+            {
+                visuals.Add(
+                    visual
+                );
+
+                RefreshAllHands();
+
+                Vector3 finalPosition =
+                    visual.transform.position;
+
+                Quaternion finalRotation =
+                    visual.transform.rotation;
+
+                visual.transform.SetParent(
+                    null,
+                    true
+                );
+
+                visual.SetAnimationLocked(true);
+
+                Vector3 startPosition =
+                    drawPilePosition.position;
+
+                startPosition.y +=
+                    0.15f;
+
+                visual.transform.position =
+                    startPosition;
+
+                visual.transform.rotation =
+                    drawPilePosition.rotation;
+
+                // AI keeps card face down.
+                visual.SetCardBackVisible(
+                    true
+                );
+
+                yield return
+                    AnimateDrawCard(
+                        visual,
+                        startPosition,
+                        drawPilePosition.rotation,
+                        finalPosition,
+                        finalRotation
+                    );
+
+                visual.transform.SetParent(
+                    handCenter,
+                    true
+                );
+
+                visual.transform.position =
+                    finalPosition;
+
+                visual.transform.rotation =
+                    finalRotation;
+
+                visual.SetCardBackVisible(
+                    true
+                );
+
+                visual.SetAnimationLocked(
+                    false
+                );
+
+                visual.CaptureCurrentTransformAsNormal();
+
+                RefreshAllHands();
+            }
+
+            // See if AI can now play.
+            chosen =
+                opponent.ChooseCard(
+                    hand,
+                    currentTopCard
+                );
+
+            if (chosen != null)
+            {
+                yield return
+                    new WaitForSeconds(
+                        0.08f
+                    );
+
+                yield return
+                    PlayAICardRoutine(
+                        currentPlayerIndex,
+                        chosen
+                    );
+
+                yield break;
+            }
+        }
+
+        // No playable card after 3 draws.
+        GoToNextPlayer();
+    }
+
+    // ============================================================
+    // AI PLAY
+    // ============================================================
+
+    private IEnumerator PlayAICardRoutine(
+        int playerIndex,
+        CardData card)
+    {
+        state =
+            GameState.ResolvingChallenge;
+
+        List<CardData> hand =
+            GetAIHand(playerIndex);
+
+        List<Card3D> visuals =
+            GetAIVisuals(playerIndex);
+
+        if (hand == null ||
+            visuals == null)
+        {
+            GoToNextPlayer();
+
+            yield break;
+        }
+
+        hand.Remove(card);
+
+        Card3D visual =
+            FindVisualForCard(
+                visuals,
+                card
+            );
+
+        if (visual == null)
+        {
+            GoToNextPlayer();
+
+            yield break;
+        }
+
+        visuals.Remove(
+            visual
+        );
+
+        visual.SetHovered(false);
+        visual.SetAnimationLocked(true);
+
+        // Reveal it only for the play animation.
+        visual.SetCardBackVisible(false);
+
+        RefreshAllHands();
+
+        if (currentDiscardVisual != null)
+        {
+            Destroy(
+                currentDiscardVisual.gameObject
+            );
+
+            currentDiscardVisual = null;
+        }
+
+        Vector3 startPosition =
+            visual.transform.position;
+
+        Quaternion startRotation =
+            visual.transform.rotation;
+
+        visual.transform.SetParent(
+            null,
+            true
+        );
+
+        yield return
+            AnimatePlayCard(
+                visual,
+                startPosition,
+                startRotation,
+                discardPilePosition.position,
+                discardPilePosition.rotation
+            );
+
+        visual.transform.SetParent(
+            discardPilePosition,
+            true
+        );
+
+        visual.transform.position =
+            discardPilePosition.position;
+
+        visual.transform.rotation =
+            discardPilePosition.rotation;
+
+        visual.transform.localScale =
+            Vector3.one;
+
+        visual.SetAnimationLocked(false);
+        visual.CaptureCurrentTransformAsNormal();
+
+        DisableCardColliders(
+            visual.gameObject
+        );
+
+        currentDiscardVisual =
+            visual;
+
+        currentTopCard =
+            card;
+
+        ResolvePlayedCard(
+            card,
+            playerIndex
+        );
+    }
+
+    // ============================================================
+    // FIND AI VISUAL
+    // ============================================================
+
+    private Card3D FindVisualForCard(
+        List<Card3D> visuals,
+        CardData data)
+    {
+        if (visuals == null)
+            return null;
+
+        foreach (Card3D visual in visuals)
+        {
+            if (visual != null &&
+                visual.data == data)
+            {
+                return visual;
+            }
+        }
+
+        return null;
+    }
+
+    // ============================================================
+    // SPAWN HAND CARD
     // ============================================================
 
     private Card3D SpawnHandCard(
@@ -459,7 +1268,8 @@ public class GameManager : MonoBehaviour
         if (cardPrefab == null)
         {
             Debug.LogError(
-                "GAME MANAGER: Card Prefab is not assigned."
+                "GameManager: " +
+                "Card Prefab is missing."
             );
 
             return null;
@@ -468,7 +1278,8 @@ public class GameManager : MonoBehaviour
         if (parent == null)
         {
             Debug.LogError(
-                "GAME MANAGER: Hand position is not assigned."
+                "GameManager: " +
+                "Hand position is missing."
             );
 
             return null;
@@ -500,27 +1311,15 @@ public class GameManager : MonoBehaviour
     }
 
     // ============================================================
-    // DISCARD PILE
+    // DISCARD CARD
     // ============================================================
 
     private void SpawnDiscardCard(
         CardData data)
     {
-        if (discardPilePosition == null)
+        if (discardPilePosition == null ||
+            cardPrefab == null)
         {
-            Debug.LogError(
-                "DISCARD PILE POSITION IS NOT ASSIGNED."
-            );
-
-            return;
-        }
-
-        if (cardPrefab == null)
-        {
-            Debug.LogError(
-                "CARD PREFAB IS NOT ASSIGNED."
-            );
-
             return;
         }
 
@@ -529,8 +1328,6 @@ public class GameManager : MonoBehaviour
             Destroy(
                 currentDiscardVisual.gameObject
             );
-
-            currentDiscardVisual = null;
         }
 
         GameObject obj =
@@ -560,74 +1357,43 @@ public class GameManager : MonoBehaviour
 
         if (card == null)
         {
-            Debug.LogError(
-                "CardPrefab is missing Card3D."
-            );
-
             Destroy(obj);
-
             return;
         }
 
         card.SetupCard(data);
-
         card.SetCardBackVisible(false);
-
-        // THIS IS IMPORTANT:
-        // Card3D needs to forget the prefab's
-        // old transform and use this pile position
-        // as its new normal position.
         card.CaptureCurrentTransformAsNormal();
 
-        Collider[] colliders =
-            obj.GetComponentsInChildren<Collider>();
-
-        foreach (Collider col in colliders)
-        {
-            col.enabled = false;
-        }
+        DisableCardColliders(
+            obj
+        );
 
         currentDiscardVisual =
             card;
-
-        Debug.Log(
-            "Discard card spawned at: " +
-            obj.transform.position
-        );
     }
 
     // ============================================================
-    // DRAW PILE
+    // DRAW PILE VISUALS
     // ============================================================
 
     private void SpawnDrawPileVisual()
     {
-        if (drawPilePosition == null)
+        if (drawPilePosition == null ||
+            cardPrefab == null)
         {
-            Debug.LogError(
-                "DRAW PILE POSITION IS NOT ASSIGNED."
-            );
-
             return;
         }
 
-        if (cardPrefab == null)
-        {
-            Debug.LogError(
-                "CARD PREFAB IS NOT ASSIGNED."
-            );
-
-            return;
-        }
-
-        // Remove old draw-pile cards.
         for (int i =
              drawPilePosition.childCount - 1;
              i >= 0;
              i--)
         {
             Destroy(
-                drawPilePosition.GetChild(i).gameObject
+                drawPilePosition
+                    .GetChild(i)
+                    .gameObject
             );
         }
 
@@ -641,7 +1407,7 @@ public class GameManager : MonoBehaviour
                 );
 
             obj.name =
-                $"DrawPileCard_{i}";
+                $"DrawPileVisual_{i}";
 
             obj.transform.SetParent(
                 drawPilePosition,
@@ -668,289 +1434,29 @@ public class GameManager : MonoBehaviour
             {
                 card.SetCardBackVisible(true);
 
-                // THIS IS THE IMPORTANT FIX.
-                // Tell Card3D that this newly
-                // positioned transform is its
-                // actual normal position.
+                card.SetAnimationLocked(true);
+
                 card.CaptureCurrentTransformAsNormal();
             }
 
-            // These are visual-only cards.
-            // DrawPile.cs handles the click.
-            Collider[] colliders =
-                obj.GetComponentsInChildren<Collider>();
-
-            foreach (Collider col in colliders)
-            {
-                col.enabled = false;
-            }
-        }
-
-        Debug.Log(
-            "Draw pile spawned at: " +
-            drawPilePosition.position
-        );
-    }
-
-    // ============================================================
-    // PLAYER PLAYS CARD
-    // ============================================================
-
-    public void PlayCard(
-        Card3D clickedCard)
-    {
-        if (state != GameState.Playing)
-            return;
-
-        if (!PlayerTurn)
-            return;
-
-        if (clickedCard == null)
-            return;
-
-        if (clickedCard.data == null)
-            return;
-
-        if (!clickedCard.data.CanPlay(
-                currentTopCard))
-        {
-            Debug.Log(
-                "That card cannot be played."
-            );
-
-            return;
-        }
-
-        CardData playedCard =
-            clickedCard.data;
-
-        playerHand.Remove(
-            playedCard
-        );
-
-        playerVisualCards.Remove(
-            clickedCard
-        );
-
-        Destroy(
-            clickedCard.gameObject
-        );
-
-        currentTopCard =
-            playedCard;
-
-        SpawnDiscardCard(
-            playedCard
-        );
-
-        RefreshAllHands();
-
-        ResolvePlayedCard(
-            playedCard,
-            0
-        );
-    }
-
-    // ============================================================
-    // PLAYER DRAW
-    // ============================================================
-
-    public void PlayerDrawCard()
-    {
-        if (state != GameState.Playing)
-            return;
-
-        if (!PlayerTurn)
-            return;
-
-        CardData drawnCard =
-            DrawFromDeck();
-
-        if (drawnCard == null)
-            return;
-
-        playerHand.Add(
-            drawnCard
-        );
-
-        Card3D visual =
-            SpawnHandCard(
-                drawnCard,
-                playerHandCenter
-            );
-
-        if (visual != null)
-        {
-            playerVisualCards.Add(
-                visual
-            );
-        }
-
-        RefreshAllHands();
-
-        Debug.Log(
-            $"You drew " +
-            $"{drawnCard.color} " +
-            $"{drawnCard.number}"
-        );
-
-        // Temporary simple rule:
-        // drawing ends the turn.
-        GoToNextPlayer();
-    }
-
-    // ============================================================
-    // CARD RESOLUTION
-    // ============================================================
-
-    private void ResolvePlayedCard(
-        CardData card,
-        int playedByPlayerIndex)
-    {
-        // Basic card-game loop first.
-        // Minigames will be connected after
-        // the core game is stable.
-
-        GoToNextPlayer();
-    }
-
-    // ============================================================
-    // TURN SYSTEM
-    // ============================================================
-
-    private void GoToNextPlayer()
-    {
-        state =
-            GameState.Playing;
-
-        currentPlayerIndex =
-            GetNextPlayerIndex();
-
-        UpdateTurnUI();
-
-        if (currentPlayerIndex != 0)
-        {
-            StartCoroutine(
-                RunAITurn()
-            );
+            // Decorative pile cards are not clickable.
+            DisableCardColliders(obj);
         }
     }
 
-    public int GetNextPlayerIndex()
-    {
-        return
-            (currentPlayerIndex + 1) % 4;
-    }
-
     // ============================================================
-    // AI TURN
+    // HELPERS
     // ============================================================
 
-    private IEnumerator RunAITurn()
+    private void DisableCardColliders(
+        GameObject obj)
     {
-        yield return new WaitForSeconds(
-            1f
-        );
+        Collider[] colliders =
+            obj.GetComponentsInChildren<Collider>();
 
-        if (state != GameState.Playing)
-            yield break;
-
-        AIOpponent opponent =
-            GetAIForPlayerIndex(
-                currentPlayerIndex
-            );
-
-        List<CardData> hand =
-            GetAIHand(
-                currentPlayerIndex
-            );
-
-        if (opponent == null ||
-            hand == null)
+        foreach (Collider collider in colliders)
         {
-            Debug.LogError(
-                "AI setup is incomplete."
-            );
-
-            GoToNextPlayer();
-
-            yield break;
-        }
-
-        CardData chosen =
-            opponent.ChooseCard(
-                hand,
-                currentTopCard
-            );
-
-        if (chosen == null)
-        {
-            CardData drawn =
-                DrawFromDeck();
-
-            if (drawn != null)
-            {
-                hand.Add(
-                    drawn
-                );
-
-                List<Card3D> visuals =
-                    GetAIVisuals(
-                        currentPlayerIndex
-                    );
-
-                Transform anchor =
-                    GetAIHandCenter(
-                        currentPlayerIndex
-                    );
-
-                Card3D visual =
-                    SpawnHandCard(
-                        drawn,
-                        anchor
-                    );
-
-                if (visual != null)
-                {
-                    visuals.Add(
-                        visual
-                    );
-                }
-
-                RefreshAllHands();
-            }
-
-            yield return new WaitForSeconds(
-                0.5f
-            );
-
-            GoToNextPlayer();
-
-            yield break;
-        }
-
-        PlayAICard(
-            currentPlayerIndex,
-            chosen
-        );
-    }
-
-    private AIOpponent GetAIForPlayerIndex(
-        int index)
-    {
-        switch (index)
-        {
-            case 1:
-                return ai1;
-
-            case 2:
-                return ai2;
-
-            case 3:
-                return ai3;
-
-            default:
-                return null;
+            collider.enabled = false;
         }
     }
 
@@ -972,81 +1478,6 @@ public class GameManager : MonoBehaviour
                 return null;
         }
     }
-
-    private void PlayAICard(
-        int playerIndex,
-        CardData card)
-    {
-        List<CardData> hand =
-            GetAIHand(
-                playerIndex
-            );
-
-        if (hand == null)
-            return;
-
-        hand.Remove(
-            card
-        );
-
-        RemoveAIVisual(
-            playerIndex,
-            card
-        );
-
-        currentTopCard =
-            card;
-
-        SpawnDiscardCard(
-            card
-        );
-
-        RefreshAllHands();
-
-        ResolvePlayedCard(
-            card,
-            playerIndex
-        );
-    }
-
-    private void RemoveAIVisual(
-        int playerIndex,
-        CardData card)
-    {
-        List<Card3D> visuals =
-            GetAIVisuals(
-                playerIndex
-            );
-
-        if (visuals == null)
-            return;
-
-        for (int i = 0;
-             i < visuals.Count;
-             i++)
-        {
-            Card3D visual =
-                visuals[i];
-
-            if (visual == null)
-                continue;
-
-            if (visual.data == card)
-            {
-                Destroy(
-                    visual.gameObject
-                );
-
-                visuals.RemoveAt(i);
-
-                return;
-            }
-        }
-    }
-
-    // ============================================================
-    // VISUAL HELPERS
-    // ============================================================
 
     private List<Card3D> GetAIVisuals(
         int index)
@@ -1085,6 +1516,29 @@ public class GameManager : MonoBehaviour
                 return null;
         }
     }
+
+    private AIOpponent GetAI(
+        int index)
+    {
+        switch (index)
+        {
+            case 1:
+                return ai1;
+
+            case 2:
+                return ai2;
+
+            case 3:
+                return ai3;
+
+            default:
+                return null;
+        }
+    }
+
+    // ============================================================
+    // HAND REFRESH
+    // ============================================================
 
     public void RefreshAllHands()
     {
@@ -1167,9 +1621,7 @@ public class GameManager : MonoBehaviour
     {
         return
             card != null &&
-            playerVisualCards.Contains(
-                card
-            );
+            playerVisualCards.Contains(card);
     }
 
     // ============================================================
@@ -1181,27 +1633,27 @@ public class GameManager : MonoBehaviour
         if (turnText == null)
             return;
 
-        switch (currentPlayerIndex)
+        if (currentPlayerIndex == 0)
         {
-            case 0:
-                turnText.text =
-                    "YOUR TURN";
-                break;
-
-            case 1:
-                turnText.text =
-                    "AI 1'S TURN";
-                break;
-
-            case 2:
-                turnText.text =
-                    "AI 2'S TURN";
-                break;
-
-            case 3:
-                turnText.text =
-                    "AI 3'S TURN";
-                break;
+            turnText.text =
+                $"YOUR TURN  " +
+                $"DRAW {playerDrawCount}/" +
+                $"{maximumPlayerDraws}";
+        }
+        else if (currentPlayerIndex == 1)
+        {
+            turnText.text =
+                "AI 1'S TURN";
+        }
+        else if (currentPlayerIndex == 2)
+        {
+            turnText.text =
+                "AI 2'S TURN";
+        }
+        else
+        {
+            turnText.text =
+                "AI 3'S TURN";
         }
     }
 
@@ -1239,10 +1691,6 @@ public class GameManager : MonoBehaviour
 
         if (MinigameManager.Instance == null)
         {
-            Debug.LogError(
-                "MinigameManager is missing."
-            );
-
             state =
                 GameState.Playing;
 
@@ -1262,11 +1710,6 @@ public class GameManager : MonoBehaviour
         state =
             GameState.ResolvingChallenge;
 
-        if (!challengerWon)
-        {
-            ApplyChallengePenalty();
-        }
-
         if (TransitionManager.Instance != null)
         {
             TransitionManager.Instance
@@ -1278,134 +1721,9 @@ public class GameManager : MonoBehaviour
         );
     }
 
-    private void ApplyChallengePenalty()
-    {
-        if (currentTopCard == null)
-            return;
-
-        switch (currentTopCard.type)
-        {
-            case CardType.Draw2:
-
-                DrawPenalty(
-                    GetNextPlayerIndex(),
-                    4
-                );
-
-                break;
-
-            case CardType.Draw4:
-
-                DrawPenalty(
-                    GetNextPlayerIndex(),
-                    8
-                );
-
-                break;
-        }
-    }
-
-    private void DrawPenalty(
-        int playerIndex,
-        int amount)
-    {
-        for (int i = 0;
-             i < amount;
-             i++)
-        {
-            AddCardToPlayer(
-                playerIndex
-            );
-        }
-
-        RefreshAllHands();
-    }
-
-    private void AddCardToPlayer(
-        int playerIndex)
-    {
-        CardData card =
-            DrawFromDeck();
-
-        if (card == null)
-            return;
-
-        List<Card3D> visuals = null;
-        Transform anchor = null;
-
-        switch (playerIndex)
-        {
-            case 0:
-
-                playerHand.Add(card);
-
-                visuals =
-                    playerVisualCards;
-
-                anchor =
-                    playerHandCenter;
-
-                break;
-
-            case 1:
-
-                ai1Hand.Add(card);
-
-                visuals =
-                    ai1VisualCards;
-
-                anchor =
-                    ai1HandCenter;
-
-                break;
-
-            case 2:
-
-                ai2Hand.Add(card);
-
-                visuals =
-                    ai2VisualCards;
-
-                anchor =
-                    ai2HandCenter;
-
-                break;
-
-            case 3:
-
-                ai3Hand.Add(card);
-
-                visuals =
-                    ai3VisualCards;
-
-                anchor =
-                    ai3HandCenter;
-
-                break;
-        }
-
-        if (visuals == null)
-            return;
-
-        Card3D visual =
-            SpawnHandCard(
-                card,
-                anchor
-            );
-
-        if (visual != null)
-        {
-            visuals.Add(
-                visual
-            );
-        }
-    }
-
     private IEnumerator FinishChallenge()
     {
-        yield return new WaitForSeconds(
-            2f
-        );
+        yield return new WaitForSeconds(1.5f);
 
         GoToNextPlayer();
     }

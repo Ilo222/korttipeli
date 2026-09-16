@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 
 public class Card3D : MonoBehaviour
@@ -49,7 +50,7 @@ public class Card3D : MonoBehaviour
     [Header("Hover")]
     [SerializeField] private float hoverHeight = 0.45f;
     [SerializeField] private float hoverScale = 1.08f;
-    [SerializeField] private float hoverSmooth = 14f;
+    [SerializeField] private float hoverSmooth = 18f;
 
     private Vector3 normalLocalPosition;
     private Quaternion normalLocalRotation;
@@ -60,17 +61,20 @@ public class Card3D : MonoBehaviour
     private Vector3 targetLocalScale;
 
     private bool hovered;
+    private bool animationLocked;
 
     public bool IsHovered => hovered;
 
     private void Awake()
     {
         CaptureCurrentTransformAsNormal();
-        ResetHoverTarget();
     }
 
     private void Update()
     {
+        if (animationLocked)
+            return;
+
         transform.localPosition =
             Vector3.Lerp(
                 transform.localPosition,
@@ -93,6 +97,14 @@ public class Card3D : MonoBehaviour
             );
     }
 
+    public void SetAnimationLocked(bool locked)
+    {
+        animationLocked = locked;
+
+        if (locked)
+            hovered = false;
+    }
+
     public void CaptureCurrentTransformAsNormal()
     {
         normalLocalPosition = transform.localPosition;
@@ -111,6 +123,9 @@ public class Card3D : MonoBehaviour
 
     public void SetHovered(bool value)
     {
+        if (animationLocked)
+            return;
+
         if (value == hovered)
             return;
 
@@ -138,6 +153,7 @@ public class Card3D : MonoBehaviour
     {
         data = newData;
 
+        SetAnimationLocked(false);
         CaptureCurrentTransformAsNormal();
 
         UpdateArtwork();
@@ -162,10 +178,31 @@ public class Card3D : MonoBehaviour
         }
     }
 
+    public void SnapToLocal(
+        Vector3 position,
+        Quaternion rotation,
+        Vector3 scale)
+    {
+        transform.localPosition = position;
+        transform.localRotation = rotation;
+        transform.localScale = scale;
+
+        CaptureCurrentTransformAsNormal();
+    }
+
+    public void SnapToWorld(
+        Vector3 position,
+        Quaternion rotation,
+        Vector3 scale)
+    {
+        transform.position = position;
+        transform.rotation = rotation;
+        transform.localScale = scale;
+    }
+
     private void UpdateArtwork()
     {
-        if (artworkRenderer == null ||
-            data == null)
+        if (artworkRenderer == null || data == null)
             return;
 
         Texture2D texture = null;
@@ -268,8 +305,7 @@ public class Card3D : MonoBehaviour
         }
     }
 
-    private Texture2D GetSpecialTexture(
-        CardType type)
+    private Texture2D GetSpecialTexture(CardType type)
     {
         switch (type)
         {
