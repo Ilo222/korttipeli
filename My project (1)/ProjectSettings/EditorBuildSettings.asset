@@ -6,14 +6,23 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
-    path: Assets/Scenes/SampleScene.unity
-    guid: 99c9720ab356a0642a771bea13969a05
-  - enabled: 1
     path: Assets/Scenes/MainMenu.unity
     guid: ab5b07b88b347fb42a0b38468c481534
   - enabled: 1
+    path: Assets/Scenes/MiskaMain.unity
+    guid: 0c0b2c94edf4e974385b0319a990bcc9
+  - enabled: 1
     path: Assets/Scenes/HowtoplayScene.unity
     guid: 46ac5752183b10a4793bca0b972c6622
+  - enabled: 1
+    path: Assets/Scenes/Credits.unity
+    guid: 4f99530b397d38c43b90ae7e49342fec
+  - enabled: 1
+    path: Assets/Scenes/End.unity
+    guid: 7eb4884382e01aa4e97e66c22a99ccf6
+  - enabled: 1
+    path: Assets/Scenes/Cutscene.unity
+    guid: 7a71f410f5402df408652ac1b6293d0c
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
   m_UseUCBPForAssetBundles: 0
