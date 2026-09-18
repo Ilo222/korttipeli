@@ -673,7 +673,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3ed7b58e42e367742b91bdfeb8d8481e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MenuBtn
-  mainSceneName: MiskaMain
+  mainSceneName: Cutscene
   howToPlaySceneName: HowtoplayScene
   mainMenuSceneName: MainMenu
   CreditsSceneName: Credits
