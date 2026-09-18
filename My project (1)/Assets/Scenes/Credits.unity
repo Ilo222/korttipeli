@@ -154,7 +154,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: -3171}
+  m_AnchoredPosition: {x: 0, y: -3843}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &276798377
@@ -169,7 +169,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4a6e281b8ef9c9048825ce19ddbc551c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Credits
-  speed: 50
+  speed: 60
   returnDelay: 125
   sceneName: MainMenu
 --- !u!114 &276798378
@@ -194,20 +194,20 @@ MonoBehaviour:
       m_Calls: []
   m_text: 'ONU!
 
-    
+
 
     CREATED BY
 
     Lauhkea Lepakko
 
-    
+
 
     GAME DESIGN
 
     Miska
     Partinen
 
-    
+
 
     PROGRAMMING
 
@@ -215,107 +215,106 @@ MonoBehaviour:
 
     Ilo Niinikangas
 
-    Miska
-    Partinen
+    Miska Partinen
 
 
-    AI DESIGN
+    AI
+    DESIGN
 
     Alex Khan
 
-    
+
 
     ART & VISUALS
+
+    Miska Partinen
+
+    Ilo Niinikangas
+
+
+
+    ANIMATION
 
     Miska
     Partinen
 
-    Ilo Niinikangas
 
-    
-
-    ANIMATION
-
-    Miska Partinen
-
-    
 
     MUSIC
 
     PaulYudin
 
-    
 
-    SOUND
-    EFFECTS
+
+    SOUND EFFECTS
 
     Null
 
-    
 
-    WRITING / STORY
+
+    WRITING
+    / STORY
 
     Miska Partinen
 
-    
 
-    VOICE
-    ACTING
+
+    VOICE ACTING
 
     - Host_1: Alex Khan
 
-    - Host_2: Miska Partinen
+    -
+    Host_2: Miska Partinen
 
-    - Host_3:
-    Ilo Niinikangas
+    - Host_3: Ilo Niinikangas
 
-    
+
 
     VOICE DIRECTION
 
-    Alex Khan
+    Alex
+    Khan
 
-    
 
-    LOCALIZATION
-    / TRANSLATION
+
+    LOCALIZATION / TRANSLATION
 
     Ilo Niinikangas
 
-    
+
 
     UI/UX DESIGN
 
-    Ilo Niinikangas
+    Ilo
+    Niinikangas
 
-    
 
-    COMMUNITY
-    & SOCIAL MEDIA
+
+    COMMUNITY & SOCIAL MEDIA
 
     Artstation: Inkrelo
 
-    
 
-    SPECIAL THANKS
 
-    A.R.S|T.
-    - School Assets
+    SPECIAL
+    THANKS
 
-    
+    A.R.S|T. - School Assets
+
+
 
     MADE WITH
 
     Unity, Blender
 
-    
+
 
     INSPIRED
     BY
 
     Uno
 
-    
+
 
     THANKS FOR PLAYING'
   m_isRightToLeft: 0
