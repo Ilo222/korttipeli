@@ -5,7 +5,7 @@ public class ButtonTargetLink : MonoBehaviour, IPointerEnterHandler, IPointerExi
 {
     public MenuHand menuHand;
     public Transform targetTransform;
-    public EyeColorChanger[] eyeColorChangers; // Voit vet‰‰ t‰h‰n useamman silm‰n
+    public EyeColorChanger[] eyeColorChangers; 
 
     public void OnPointerEnter(PointerEventData eventData)
     {

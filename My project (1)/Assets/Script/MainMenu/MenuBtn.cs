@@ -58,7 +58,7 @@ public class MenuBtn : MonoBehaviour
     {
         if (startCameraPosition == null) return;
 
-        // Liikuttaa kameran vain takaisin alkuun ilman paneelin säätöjä
+     
         MoveCameraTo(startCameraPosition);
     }
 
