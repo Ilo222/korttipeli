@@ -26,6 +26,10 @@ public class CardData
     public CardType type;
     public int number;
 
+    // Used by ColorChange cards.
+    // Remains Wild until a player/AI chooses a color.
+    public CardColor chosenColor = CardColor.Wild;
+
     public CardData(
         CardColor color,
         CardType type,
@@ -34,6 +38,9 @@ public class CardData
         this.color = color;
         this.type = type;
         this.number = number;
+
+        if (type != CardType.ColorChange)
+            chosenColor = CardColor.Wild;
     }
 
     public bool CanPlay(CardData topCard)
@@ -41,8 +48,8 @@ public class CardData
         if (topCard == null)
             return true;
 
-        // Your custom rule:
-        // all special cards currently behave as Jokers/Wilds.
+        // All special cards are jokers for
+        // normal placement.
         if (type != CardType.Number)
             return true;
 
@@ -53,5 +60,41 @@ public class CardData
     public bool IsSpecial()
     {
         return type != CardType.Number;
+    }
+
+    public bool IsDrawCard()
+    {
+        return type == CardType.Draw2 ||
+               type == CardType.Draw4;
+    }
+
+    public int GetDrawValue()
+    {
+        if (type == CardType.Draw2)
+            return 2;
+
+        if (type == CardType.Draw4)
+            return 4;
+
+        return 0;
+    }
+
+    public CardColor GetEffectiveColor()
+    {
+        if (type == CardType.ColorChange)
+            return chosenColor;
+
+        return color;
+    }
+
+    public void SetChosenColor(CardColor newColor)
+    {
+        if (type != CardType.ColorChange)
+            return;
+
+        if (newColor == CardColor.Wild)
+            return;
+
+        chosenColor = newColor;
     }
 }

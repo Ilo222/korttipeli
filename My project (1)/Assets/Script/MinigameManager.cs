@@ -24,25 +24,30 @@ public class MinigameManager : MonoBehaviour
         bool playerIsChallenger)
     {
         challengeColor = color;
-        challengerIsPlayer = playerIsChallenger;
+        challengerIsPlayer =
+            playerIsChallenger;
 
         Debug.Log(
             "MinigameManager: Challenge started. " +
             "Color = " + color +
-            ", Player Challenger = " + playerIsChallenger +
-            ", Difficulty = " + currentDifficulty
+            ", Player Challenger = " +
+            playerIsChallenger +
+            ", Difficulty = " +
+            currentDifficulty
         );
 
         if (TransitionManager.Instance == null)
         {
             Debug.LogError(
-                "MinigameManager: TransitionManager.Instance is missing."
+                "MinigameManager: " +
+                "TransitionManager.Instance is missing."
             );
 
             return;
         }
 
-        string instruction = GetInstruction(color);
+        string instruction =
+            GetInstruction(color);
 
         TransitionManager.Instance.StartChallenge(
             color,
@@ -87,192 +92,155 @@ public class MinigameManager : MonoBehaviour
 
             default:
                 Debug.LogWarning(
-                    "MinigameManager: Unknown challenge color."
+                    "Unknown challenge color."
                 );
                 break;
         }
     }
 
     // =========================================================
-    // GET INSTRUCTION
+    // INSTRUCTIONS
     // =========================================================
 
-    private string GetInstruction(CardColor color)
+    private string GetInstruction(
+        CardColor color)
     {
         switch (color)
         {
             case CardColor.Yellow:
-                return GetSpeedInstruction();
+                return
+                    "ADD THE DICE AS FAST AS YOU CAN!";
 
             case CardColor.Red:
-                return GetPhysicalInstruction();
+                return
+                    "KEEP YOUR BALANCE!";
 
             case CardColor.Green:
-                return GetLuckInstruction();
+                return
+                    "TEST YOUR LUCK!";
 
             case CardColor.Purple:
-                return GetKnowledgeInstruction();
-
-            case CardColor.Wild:
-                return "GET READY!";
+                return
+                    "ANSWER THE QUESTION!";
 
             default:
-                return "GET READY!";
+                return
+                    "GET READY!";
         }
     }
 
     // =========================================================
-    // SPEED INSTRUCTION
-    // =========================================================
-
-    private string GetSpeedInstruction()
-    {
-        return "ADD THE DICE AS FAST AS YOU CAN!";
-    }
-
-    // =========================================================
-    // PHYSICAL INSTRUCTION
-    // =========================================================
-
-    private string GetPhysicalInstruction()
-    {
-        return "KEEP YOUR BALANCE!";
-    }
-
-    // =========================================================
-    // LUCK INSTRUCTION
-    // =========================================================
-
-    private string GetLuckInstruction()
-    {
-        return "TEST YOUR LUCK!";
-    }
-
-    // =========================================================
-    // KNOWLEDGE INSTRUCTION
-    // =========================================================
-
-    private string GetKnowledgeInstruction()
-    {
-        return "ANSWER THE QUESTION!";
-    }
-
-    // =========================================================
-    // SPEED MINIGAME
+    // MINIGAMES
     // =========================================================
 
     private void StartSpeedGame()
     {
         Debug.Log(
-            "MinigameManager: SPEED minigame started. " +
-            "Difficulty = " +
-            currentDifficulty
+            "SPEED MINIGAME STARTED"
         );
 
-        // Actual Speed minigame will be started here.
+        // Actual Speed minigame later.
         //
         // Yellow = Speed
-        // Dice addition challenge.
+        // Dice addition.
     }
-
-    // =========================================================
-    // PHYSICAL MINIGAME
-    // =========================================================
 
     private void StartPhysicalGame()
     {
         Debug.Log(
-            "MinigameManager: PHYSICAL minigame started. " +
-            "Difficulty = " +
-            currentDifficulty
+            "PHYSICAL MINIGAME STARTED"
         );
 
-        // Actual Physical minigame will be started here.
+        // Actual Physical minigame later.
         //
         // Red = Physical
         // Balance challenge.
     }
 
-    // =========================================================
-    // LUCK MINIGAME
-    // =========================================================
-
     private void StartLuckGame()
     {
         Debug.Log(
-            "MinigameManager: LUCK minigame started. " +
-            "Difficulty = " +
-            currentDifficulty
+            "LUCK MINIGAME STARTED"
         );
 
-        // Actual Luck minigame will be started here.
+        // Actual Luck minigame later.
         //
-        // Green = Luck
-        // Chance / hats / coin-style challenge.
+        // Green = Luck.
     }
-
-    // =========================================================
-    // KNOWLEDGE MINIGAME
-    // =========================================================
 
     private void StartKnowledgeGame()
     {
         Debug.Log(
-            "MinigameManager: KNOWLEDGE minigame started. " +
-            "Difficulty = " +
-            currentDifficulty
+            "KNOWLEDGE MINIGAME STARTED"
         );
 
-        // Actual Knowledge minigame will be started here.
+        // Actual Knowledge minigame later.
         //
-        // Purple = Knowledge
-        // Trivia / question challenge.
+        // Purple = Knowledge.
     }
 
     // =========================================================
-    // MINIGAME COMPLETED
+    // PLAYER/ACTUAL MINIGAME FINISHED
     // =========================================================
 
-    public void OnMinigameCompleted()
+    public void OnMinigameCompleted(
+        bool challengerWon)
     {
         Debug.Log(
-            "MinigameManager: Minigame completed."
+            "MinigameManager: " +
+            "Minigame completed. Challenger won = " +
+            challengerWon
         );
 
-        // Increase difficulty for the next challenge.
         currentDifficulty++;
 
-        // Return from the minigame camera/table
-        // back to the main game.
         if (TransitionManager.Instance != null)
         {
             TransitionManager.Instance.EndChallenge();
         }
-        else
+
+        if (GameManager.Instance != null)
         {
-            Debug.LogWarning(
-                "MinigameManager: TransitionManager.Instance " +
-                "was not found while ending minigame."
+            GameManager.Instance.ChallengeFinished(
+                challengerWon
             );
         }
-
-        /*
-         * IMPORTANT:
-         *
-         * We do NOT call:
-         *
-         * GameManager.Instance.OnMinigameFinished();
-         *
-         * because your current GameManager does not contain
-         * that method.
-         *
-         * We will connect the minigame result back into the
-         * normal turn system when we update GameManager.
-         */
     }
 
     // =========================================================
-    // GET CURRENT CHALLENGE COLOR
+    // COMPATIBILITY
+    // =========================================================
+
+    public void OnMinigameCompleted()
+    {
+        OnMinigameCompleted(true);
+    }
+
+    // =========================================================
+    // AI CHALLENGE FINISHED
+    // =========================================================
+
+    public void CompleteAIChallenge(
+        bool challengerWon)
+    {
+        Debug.Log(
+            "MinigameManager: " +
+            "AI challenge simulated. Won = " +
+            challengerWon
+        );
+
+        currentDifficulty++;
+
+        if (GameManager.Instance != null)
+        {
+            GameManager.Instance.ChallengeFinished(
+                challengerWon
+            );
+        }
+    }
+
+    // =========================================================
+    // GETTERS
     // =========================================================
 
     public CardColor GetChallengeColor()
@@ -280,18 +248,10 @@ public class MinigameManager : MonoBehaviour
         return challengeColor;
     }
 
-    // =========================================================
-    // IS PLAYER THE CHALLENGER?
-    // =========================================================
-
     public bool IsPlayerChallenger()
     {
         return challengerIsPlayer;
     }
-
-    // =========================================================
-    // GET DIFFICULTY
-    // =========================================================
 
     public int GetCurrentDifficulty()
     {
