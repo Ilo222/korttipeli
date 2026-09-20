@@ -70,7 +70,13 @@ public class GameManager : MonoBehaviour
 
     [Header("UI")]
     [SerializeField] private TextMeshProUGUI turnText;
+    [SerializeField] private TextMeshProUGUI currentColorText;
+    [SerializeField] private TextMeshProUGUI drawPenaltyText;
+    [SerializeField] private TextMeshProUGUI specialEffectText;
     [SerializeField] private ChallengePanel challengePanel;
+
+    [Header("UI Feedback")]
+    [SerializeField] private float specialEffectDuration = 1.35f;
 
     // ============================================================
     // STARTING HAND
@@ -223,6 +229,8 @@ public class GameManager : MonoBehaviour
 
     private bool waitingForWildColor;
 
+    private Coroutine specialEffectRoutine;
+
     // ============================================================
     // DISCARD VISUAL
     // ============================================================
@@ -290,6 +298,7 @@ public class GameManager : MonoBehaviour
         RefreshAllHands();
 
         UpdateTurnUI();
+        HideSpecialEffect();
 
         HideChallengePanel();
 
@@ -1082,6 +1091,8 @@ public class GameManager : MonoBehaviour
         pendingDrawType =
             CardType.Number;
 
+        UpdateGameplayUI();
+
         for (int i = 0;
              i < amount;
              i++)
@@ -1437,6 +1448,14 @@ public class GameManager : MonoBehaviour
             activeColor =
                 card.color;
 
+            ShowSpecialEffect(
+                "PLAYED " +
+                FormatCardColor(card.color).ToUpperInvariant() +
+                " " +
+                card.number +
+                "!"
+            );
+
             pendingSpecialCard =
                 null;
 
@@ -1550,6 +1569,15 @@ public class GameManager : MonoBehaviour
             color
         );
 
+        activeColor =
+            color;
+
+        ShowSpecialEffect(
+            "COLOR CHANGED TO " +
+            FormatCardColor(color).ToUpperInvariant() +
+            "!"
+        );
+
         waitingForWildColor =
             false;
 
@@ -1593,6 +1621,10 @@ public class GameManager : MonoBehaviour
             pendingDrawType =
                 CardType.Draw4;
         }
+
+        ShowSpecialEffect(
+            GetSpecialEffectText(card)
+        );
 
         // --------------------------------------------------------
         // The player after the person who played the card
@@ -1763,25 +1795,8 @@ public class GameManager : MonoBehaviour
 
         if (challenge)
         {
-            if (MinigameManager.Instance != null)
-            {
-                MinigameManager.Instance.RegisterChallenge(
-                    currentPlayerIndex
-                );
-
-                difficulty =
-                    MinigameManager.Instance
-                        .GetCurrentDifficulty(currentPlayerIndex);
-            }
-
-            bool challengerWon =
-                opponent.SimulateMinigame(
-                    difficulty
-                );
-
             BeginChallenge(
-                false,
-                challengerWon
+                false
             );
 
             yield break;
@@ -1852,33 +1867,6 @@ public class GameManager : MonoBehaviour
                     .GetCurrentDifficulty(currentPlayerIndex);
         }
 
-        if (!playerIsChallenger)
-        {
-            AIOpponent opponent =
-                GetAI(
-                    currentPlayerIndex
-                );
-
-            if (opponent == null)
-            {
-                ChallengeFinished(true);
-
-                return;
-            }
-
-            bool result =
-                opponent.SimulateMinigame(
-                    difficulty
-                );
-
-            BeginChallenge(
-                false,
-                result
-            );
-
-            return;
-        }
-
         if (MinigameManager.Instance == null)
         {
             Debug.LogError(
@@ -1907,7 +1895,7 @@ public class GameManager : MonoBehaviour
         MinigameManager.Instance
             .StartChallenge(
                 challengeColor,
-                true
+                playerIsChallenger
             );
     }
 
@@ -2032,11 +2020,17 @@ public class GameManager : MonoBehaviour
             "CHALLENGE WON - SPECIAL EFFECT CANCELLED."
         );
 
+        ShowSpecialEffect(
+            "CHALLENGE WON! SPECIAL CANCELLED!"
+        );
+
         // Entire draw stack is cancelled.
         pendingDrawAmount = 0;
 
         pendingDrawType =
             CardType.Number;
+
+        UpdateGameplayUI();
 
         // Color Change is cancelled too.
         // activeColor remains whatever it was before.
@@ -2069,6 +2063,10 @@ public class GameManager : MonoBehaviour
             "CHALLENGE FAILED."
         );
 
+        ShowSpecialEffect(
+            "CHALLENGE FAILED!"
+        );
+
         // --------------------------------------------------------
         // +2 / +4
         //
@@ -2092,6 +2090,14 @@ public class GameManager : MonoBehaviour
                 pendingDrawAmount
             );
 
+            ShowSpecialEffect(
+                "PENALTY DOUBLED TO +" +
+                pendingDrawAmount +
+                "!"
+            );
+
+            UpdateGameplayUI();
+
             StartCoroutine(
                 ApplyFailedDrawPenalty()
             );
@@ -2109,6 +2115,10 @@ public class GameManager : MonoBehaviour
         if (card.type ==
             CardType.Skip)
         {
+            ShowSpecialEffect(
+                "SKIP!"
+            );
+
             pendingSpecialCard =
                 null;
 
@@ -2133,6 +2143,10 @@ public class GameManager : MonoBehaviour
             CardType.Reverse)
         {
             turnDirection *= -1;
+
+            ShowSpecialEffect(
+                "REVERSE!"
+            );
 
             pendingSpecialCard =
                 null;
@@ -2162,6 +2176,12 @@ public class GameManager : MonoBehaviour
             {
                 activeColor =
                     card.chosenColor;
+
+                ShowSpecialEffect(
+                    "COLOR CHANGED TO " +
+                    FormatCardColor(card.chosenColor).ToUpperInvariant() +
+                    "!"
+                );
             }
 
             pendingSpecialCard =
@@ -2202,6 +2222,8 @@ public class GameManager : MonoBehaviour
 
         pendingDrawType =
             CardType.Number;
+
+        UpdateGameplayUI();
 
         // --------------------------------------------------------
         // Challenger draws the doubled penalty.
@@ -2664,6 +2686,8 @@ public class GameManager : MonoBehaviour
 
         pendingDrawType =
             CardType.Number;
+
+        UpdateGameplayUI();
 
         List<CardData> hand =
             GetAIHand(
@@ -3635,51 +3659,204 @@ public class GameManager : MonoBehaviour
 
     private void UpdateTurnUI()
     {
-        if (turnText == null)
-            return;
-
-        if (currentPlayerIndex == 0)
+        if (turnText != null)
         {
-            if (state ==
-                GameState.WaitingForChallenge)
+            if (currentPlayerIndex == 0)
             {
-                turnText.text =
-                    "YOUR TURN - CHALLENGE?";
+                if (state ==
+                    GameState.WaitingForChallenge)
+                {
+                    turnText.text =
+                        "YOUR TURN - CHALLENGE?";
+                }
+                else if (pendingDrawAmount > 0)
+                {
+                    turnText.text =
+                        "YOUR TURN - +" +
+                        pendingDrawAmount;
+                }
+                else
+                {
+                    turnText.text =
+                        "YOUR TURN  DRAW " +
+                        playerDrawCount +
+                        "/" +
+                        maximumPlayerDraws;
+                }
             }
-            else if (pendingDrawAmount > 0)
+            else if (currentPlayerIndex == 1)
             {
                 turnText.text =
-                    "YOUR TURN - +" +
-                    pendingDrawAmount;
+                    "AI 1'S TURN";
+            }
+            else if (currentPlayerIndex == 2)
+            {
+                turnText.text =
+                    "AI 2'S TURN";
             }
             else
             {
                 turnText.text =
-                    "YOUR TURN  " +
-                    "DRAW " +
-                    playerDrawCount +
-                    "/" +
-                    maximumPlayerDraws;
+                    "AI 3'S TURN";
             }
+        }
+
+        UpdateGameplayUI();
+    }
+
+    private void UpdateGameplayUI()
+    {
+        UpdateCurrentColorUI();
+        UpdateDrawPenaltyUI();
+    }
+
+    private void UpdateCurrentColorUI()
+    {
+        if (currentColorText == null)
+            return;
+
+        CardColor displayColor =
+            activeColor;
+
+        if (displayColor == CardColor.Wild)
+        {
+            currentColorText.text =
+                "CURRENT COLOR: NONE";
 
             return;
         }
 
-        if (currentPlayerIndex == 1)
+        currentColorText.text =
+            "CURRENT COLOR: " +
+            FormatCardColor(displayColor).ToUpperInvariant();
+    }
+
+    private void UpdateDrawPenaltyUI()
+    {
+        if (drawPenaltyText == null)
+            return;
+
+        if (pendingDrawAmount > 0)
         {
-            turnText.text =
-                "AI 1'S TURN";
-        }
-        else if (currentPlayerIndex == 2)
-        {
-            turnText.text =
-                "AI 2'S TURN";
+            drawPenaltyText.gameObject.SetActive(true);
+
+            drawPenaltyText.text =
+                "DRAW PENALTY: +" +
+                pendingDrawAmount;
         }
         else
         {
-            turnText.text =
-                "AI 3'S TURN";
+            drawPenaltyText.text =
+                string.Empty;
+
+            drawPenaltyText.gameObject.SetActive(false);
         }
+    }
+
+    private void ShowSpecialEffect(
+        string message)
+    {
+        if (specialEffectText == null)
+            return;
+
+        if (specialEffectRoutine != null)
+        {
+            StopCoroutine(
+                specialEffectRoutine
+            );
+        }
+
+        specialEffectText.gameObject.SetActive(true);
+        specialEffectText.text = message;
+
+        specialEffectRoutine =
+            StartCoroutine(
+                HideSpecialEffectAfterDelay()
+            );
+    }
+
+    private IEnumerator HideSpecialEffectAfterDelay()
+    {
+        yield return new WaitForSeconds(
+            Mathf.Max(
+                0.05f,
+                specialEffectDuration
+            )
+        );
+
+        HideSpecialEffect();
+    }
+
+    private void HideSpecialEffect()
+    {
+        if (specialEffectRoutine != null)
+        {
+            StopCoroutine(
+                specialEffectRoutine
+            );
+
+            specialEffectRoutine =
+                null;
+        }
+
+        if (specialEffectText != null)
+        {
+            specialEffectText.text =
+                string.Empty;
+
+            specialEffectText.gameObject.SetActive(false);
+        }
+    }
+
+    private string GetSpecialEffectText(
+        CardData card)
+    {
+        if (card == null)
+            return string.Empty;
+
+        switch (card.type)
+        {
+            case CardType.Draw2:
+                return "DRAW +2!";
+
+            case CardType.Draw4:
+                return "DRAW +4!";
+
+            case CardType.Reverse:
+                return "REVERSE!";
+
+            case CardType.Skip:
+                return "SKIP!";
+
+            case CardType.ColorChange:
+                if (card.chosenColor != CardColor.Wild)
+                {
+                    return
+                        "COLOR CHANGED TO " +
+                        FormatCardColor(
+                            card.chosenColor
+                        ).ToUpperInvariant() +
+                        "!";
+                }
+
+                return "COLOR CHANGE!";
+
+            default:
+                return string.Empty;
+        }
+    }
+
+    private string FormatCardColor(
+        CardColor color)
+    {
+        return color switch
+        {
+            CardColor.Purple => "Purple",
+            CardColor.Green => "Green",
+            CardColor.Yellow => "Yellow",
+            CardColor.Red => "Red",
+            _ => "None"
+        };
     }
 
     // ============================================================

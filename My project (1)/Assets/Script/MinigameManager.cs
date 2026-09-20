@@ -22,6 +22,26 @@ public class MinigameManager : MonoBehaviour
 
     private bool waitingForActualMinigame;
 
+    [Header("Minigame HUDs")]
+    [SerializeField] private GameObject speedHUD;
+    [SerializeField] private GameObject physicalHUD;
+    [SerializeField] private GameObject luckHUD;
+    [SerializeField] private GameObject knowledgeHUD;
+
+    [Header("Minigame Controllers")]
+    [SerializeField] private SpeedDiceMinigame speedMinigame;
+    [SerializeField] private PhysicalBalanceMinigame physicalMinigame;
+    [SerializeField] private LuckMinigame luckMinigame;
+    [SerializeField] private KnowledgeMinigame knowledgeMinigame;
+
+    [Header("Result UI")]
+    [SerializeField] private GameObject challengeResultPanel;
+    [SerializeField] private TMPro.TextMeshProUGUI resultTitle;
+    [SerializeField] private TMPro.TextMeshProUGUI resultText;
+    [SerializeField] private float resultDisplayDuration = 1.25f;
+
+    private bool completingResult;
+
     public CardColor CurrentChallengeColor => challengeColor;
     public int CurrentChallengerPlayerIndex => challengerPlayerIndex;
     public bool CurrentChallengeIsPresentationOnly => challengeIsPresentationOnly;
@@ -30,6 +50,8 @@ public class MinigameManager : MonoBehaviour
     {
         Instance = this;
         ResetAllPlayerDifficulty();
+        HideAllMinigameHUDs();
+        HideResult();
     }
 
     // ============================================================
@@ -246,12 +268,13 @@ public class MinigameManager : MonoBehaviour
             return;
 
         waitingForActualMinigame = false;
+        completingResult = false;
 
         if (GameManager.Instance != null)
             GameManager.Instance.state = GameState.Minigame;
 
-        int difficulty =
-            GetPlayerDifficulty(challengerPlayerIndex);
+        int difficulty = GetPlayerDifficulty(challengerPlayerIndex);
+        bool aiControlled = challengerPlayerIndex != 0;
 
         Debug.Log(
             $"MINIGAME STARTED: {challengeColor} | " +
@@ -260,66 +283,56 @@ public class MinigameManager : MonoBehaviour
             $"Presentation Only: {challengeIsPresentationOnly}"
         );
 
+        HideAllMinigameHUDs();
+        HideResult();
+
         switch (challengeColor)
         {
             case CardColor.Yellow:
-                StartSpeedGame();
+                if (speedMinigame == null)
+                {
+                    Debug.LogError("MinigameManager: SpeedDiceMinigame reference is missing.");
+                    OnMinigameCompleted(false);
+                    return;
+                }
+                speedHUD?.SetActive(true);
+                speedMinigame.StartGame(difficulty, aiControlled);
                 break;
 
             case CardColor.Red:
-                StartPhysicalGame();
+                if (physicalMinigame == null)
+                {
+                    Debug.LogError("MinigameManager: PhysicalBalanceMinigame reference is missing.");
+                    OnMinigameCompleted(false);
+                    return;
+                }
+                physicalHUD?.SetActive(true);
+                physicalMinigame.StartGame(difficulty, aiControlled);
                 break;
 
             case CardColor.Green:
-                StartLuckGame();
+                if (luckMinigame == null)
+                {
+                    Debug.LogError("MinigameManager: LuckMinigame reference is missing.");
+                    OnMinigameCompleted(false);
+                    return;
+                }
+                luckHUD?.SetActive(true);
+                luckMinigame.StartGame(difficulty, aiControlled);
                 break;
 
             case CardColor.Purple:
-                StartKnowledgeGame();
-                break;
-
             default:
-                StartKnowledgeGame();
+                if (knowledgeMinigame == null)
+                {
+                    Debug.LogError("MinigameManager: KnowledgeMinigame reference is missing.");
+                    OnMinigameCompleted(false);
+                    return;
+                }
+                knowledgeHUD?.SetActive(true);
+                knowledgeMinigame.StartGame(difficulty, aiControlled);
                 break;
         }
-    }
-
-    // ============================================================
-    // MINIGAME ENTRY POINTS
-    // These are the real routing points for the individual
-    // minigame scripts we are adding next.
-    // ============================================================
-
-    private void StartSpeedGame()
-    {
-        Debug.Log(
-            $"Speed minigame requested at difficulty " +
-            GetPlayerDifficulty(challengerPlayerIndex) + "."
-        );
-    }
-
-    private void StartPhysicalGame()
-    {
-        Debug.Log(
-            $"Physical minigame requested at difficulty " +
-            GetPlayerDifficulty(challengerPlayerIndex) + "."
-        );
-    }
-
-    private void StartLuckGame()
-    {
-        Debug.Log(
-            $"Luck minigame requested at difficulty " +
-            GetPlayerDifficulty(challengerPlayerIndex) + "."
-        );
-    }
-
-    private void StartKnowledgeGame()
-    {
-        Debug.Log(
-            $"Knowledge minigame requested at difficulty " +
-            GetPlayerDifficulty(challengerPlayerIndex) + "."
-        );
     }
 
     // ============================================================
@@ -328,10 +341,27 @@ public class MinigameManager : MonoBehaviour
 
     public void OnMinigameCompleted(bool challengerWon)
     {
+        if (completingResult)
+            return;
+
+        completingResult = true;
+        StartCoroutine(FinishMinigameResultRoutine(challengerWon));
+    }
+
+    private IEnumerator FinishMinigameResultRoutine(bool challengerWon)
+    {
+        HideAllMinigameHUDs();
+        ShowResult(challengerWon);
+
+        yield return new WaitForSeconds(Mathf.Max(0f, resultDisplayDuration));
+
+        HideResult();
+        completingResult = false;
+
         if (challengeIsPresentationOnly)
         {
             FinishPresentationMinigame(challengerWon);
-            return;
+            yield break;
         }
 
         challengeIsPresentationOnly = false;
@@ -340,11 +370,7 @@ public class MinigameManager : MonoBehaviour
             TransitionManager.Instance.EndChallenge();
 
         if (GameManager.Instance != null)
-        {
-            GameManager.Instance.ChallengeFinished(
-                challengerWon
-            );
-        }
+            GameManager.Instance.ChallengeFinished(challengerWon);
     }
 
     public void CompleteAIChallenge(bool challengerWon)
@@ -377,6 +403,37 @@ public class MinigameManager : MonoBehaviour
         {
             GameManager.Instance.state = GameState.Playing;
         }
+    }
+
+    private void HideAllMinigameHUDs()
+    {
+        speedHUD?.SetActive(false);
+        physicalHUD?.SetActive(false);
+        luckHUD?.SetActive(false);
+        knowledgeHUD?.SetActive(false);
+    }
+
+    private void ShowResult(bool won)
+    {
+        if (challengeResultPanel == null)
+            return;
+
+        challengeResultPanel.SetActive(true);
+
+        if (resultTitle != null)
+            resultTitle.text = won ? "CHALLENGE WON!" : "CHALLENGE LOST!";
+
+        if (resultText != null)
+        {
+            resultText.text = won
+                ? $"{GetDisplayPlayerName(challengerPlayerIndex)} PASSED THE MINIGAME!"
+                : $"{GetDisplayPlayerName(challengerPlayerIndex)} FAILED THE MINIGAME!";
+        }
+    }
+
+    private void HideResult()
+    {
+        challengeResultPanel?.SetActive(false);
     }
 
     // ============================================================

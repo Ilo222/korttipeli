@@ -100,7 +100,6 @@ public class TransitionManager : MonoBehaviour
 
     private Camera activeMinigameCamera;
 
-
     // =========================================================
     // AWAKE
     // =========================================================
@@ -109,7 +108,6 @@ public class TransitionManager : MonoBehaviour
     {
         Instance = this;
     }
-
 
     // =========================================================
     // START
@@ -120,36 +118,30 @@ public class TransitionManager : MonoBehaviour
         SetupInitialState();
     }
 
-
     // =========================================================
     // INITIAL STATE
     // =========================================================
 
     private void SetupInitialState()
     {
-        // Main Cinemachine cameras
-
         if (topDownCamera != null)
             topDownCamera.Priority = topDownPriority;
 
         if (wideCamera != null)
             wideCamera.Priority = 0;
 
-
-        // Regular minigame cameras
-
         DisableAllMinigameCameras();
-
-
-        // Minigame tables
 
         DisableAllMinigameTables();
 
-
-        // UI
-
+        // IMPORTANT:
+        // Keep the WarioWare panel GameObject ACTIVE so that
+        // we can move it on/off screen.
         if (minigamePanel != null)
+        {
+            minigamePanel.gameObject.SetActive(true);
             minigamePanel.anchoredPosition = panelHiddenPosition;
+        }
 
         if (instructionText != null)
             instructionText.gameObject.SetActive(false);
@@ -157,7 +149,6 @@ public class TransitionManager : MonoBehaviour
         if (countdownText != null)
             countdownText.gameObject.SetActive(false);
     }
-
 
     // =========================================================
     // START CHALLENGE
@@ -178,7 +169,6 @@ public class TransitionManager : MonoBehaviour
         );
     }
 
-
     // =========================================================
     // CHALLENGE SEQUENCE
     // =========================================================
@@ -189,13 +179,11 @@ public class TransitionManager : MonoBehaviour
     {
         transitionRunning = true;
 
-
         // -----------------------------------------------------
-        // 1. Activate correct minigame table
+        // 1. ACTIVATE CORRECT MINIGAME TABLE
         // -----------------------------------------------------
 
         ActivateCorrectMinigame(color);
-
 
         // -----------------------------------------------------
         // 2. MAIN GAME -> WIDE CAMERA
@@ -212,9 +200,8 @@ public class TransitionManager : MonoBehaviour
             wideViewDuration
         );
 
-
         // -----------------------------------------------------
-        // 3. WIDE CAMERA -> REGULAR MINIGAME CAMERA
+        // 3. WIDE CAMERA -> MINIGAME CAMERA
         // -----------------------------------------------------
 
         activeMinigameCamera =
@@ -235,16 +222,8 @@ public class TransitionManager : MonoBehaviour
             yield break;
         }
 
-
-        // Turn the minigame camera on.
-
         activeMinigameCamera.gameObject.SetActive(true);
-
         activeMinigameCamera.enabled = true;
-
-
-        // Disable the Cinemachine cameras while
-        // the regular Unity camera controls the view.
 
         if (wideCamera != null)
             wideCamera.Priority = 0;
@@ -252,45 +231,47 @@ public class TransitionManager : MonoBehaviour
         if (topDownCamera != null)
             topDownCamera.Priority = 0;
 
-
-        // Give Unity a frame to switch cameras.
-
         yield return null;
 
+        // -----------------------------------------------------
+        // 4. MAKE WARIOWARE PANEL VISIBLE
+        // -----------------------------------------------------
+
+        if (minigamePanel != null)
+        {
+            minigamePanel.gameObject.SetActive(true);
+        }
 
         // -----------------------------------------------------
-        // 4. SET INSTRUCTION TEXT
+        // 5. SET INSTRUCTION TEXT
         // -----------------------------------------------------
 
         if (instructionText != null)
         {
             instructionText.text = instruction;
-
             instructionText.gameObject.SetActive(true);
         }
 
         if (countdownText != null)
         {
+            countdownText.text = "";
             countdownText.gameObject.SetActive(false);
         }
 
-
         // -----------------------------------------------------
-        // 5. SLIDE WARIOWARE PANEL IN
+        // 6. SLIDE PANEL IN
         // -----------------------------------------------------
 
         yield return StartCoroutine(
             SlidePanelIn()
         );
 
-
         yield return new WaitForSeconds(
             countdownStartDelay
         );
 
-
         // -----------------------------------------------------
-        // 6. COUNTDOWN
+        // 7. COUNTDOWN
         // -----------------------------------------------------
 
         yield return StartCoroutine(
@@ -309,9 +290,8 @@ public class TransitionManager : MonoBehaviour
             ShowCountdown("GO!")
         );
 
-
         // -----------------------------------------------------
-        // 7. HIDE INTRO UI
+        // 8. HIDE INTRO TEXT
         // -----------------------------------------------------
 
         if (instructionText != null)
@@ -320,14 +300,16 @@ public class TransitionManager : MonoBehaviour
         if (countdownText != null)
             countdownText.gameObject.SetActive(false);
 
+        // -----------------------------------------------------
+        // 9. SLIDE PANEL OUT
+        // -----------------------------------------------------
 
         yield return StartCoroutine(
             SlidePanelOut()
         );
 
-
         // -----------------------------------------------------
-        // 8. START ACTUAL MINIGAME
+        // 10. START ACTUAL MINIGAME
         // -----------------------------------------------------
 
         if (MinigameManager.Instance != null)
@@ -342,10 +324,8 @@ public class TransitionManager : MonoBehaviour
             );
         }
 
-
         transitionRunning = false;
     }
-
 
     // =========================================================
     // GET MINIGAME CAMERA
@@ -357,46 +337,24 @@ public class TransitionManager : MonoBehaviour
         switch (color)
         {
             case CardColor.Purple:
-
-                // Purple = Knowledge
-
                 return knowledgeCamera;
-
 
             case CardColor.Yellow:
-
-                // Yellow = Speed
-
                 return speedCamera;
 
-
             case CardColor.Red:
-
-                // Red = Physical
-
                 return physicalCamera;
 
-
             case CardColor.Green:
-
-                // Green = Luck
-
                 return luckCamera;
 
-
             case CardColor.Wild:
-
-                // Wild currently falls back to Knowledge.
-
                 return knowledgeCamera;
 
-
             default:
-
                 return knowledgeCamera;
         }
     }
-
 
     // =========================================================
     // ACTIVATE CORRECT MINIGAME TABLE
@@ -407,7 +365,6 @@ public class TransitionManager : MonoBehaviour
     {
         DisableAllMinigameTables();
 
-
         switch (color)
         {
             case CardColor.Purple:
@@ -417,14 +374,12 @@ public class TransitionManager : MonoBehaviour
 
                 break;
 
-
             case CardColor.Yellow:
 
                 if (speedTable != null)
                     speedTable.SetActive(true);
 
                 break;
-
 
             case CardColor.Red:
 
@@ -433,14 +388,12 @@ public class TransitionManager : MonoBehaviour
 
                 break;
 
-
             case CardColor.Green:
 
                 if (luckTable != null)
                     luckTable.SetActive(true);
 
                 break;
-
 
             case CardColor.Wild:
 
@@ -450,7 +403,6 @@ public class TransitionManager : MonoBehaviour
                 break;
         }
     }
-
 
     // =========================================================
     // DISABLE ALL MINIGAME CAMERAS
@@ -473,7 +425,6 @@ public class TransitionManager : MonoBehaviour
         activeMinigameCamera = null;
     }
 
-
     // =========================================================
     // DISABLE ALL MINIGAME TABLES
     // =========================================================
@@ -493,7 +444,6 @@ public class TransitionManager : MonoBehaviour
             luckTable.SetActive(false);
     }
 
-
     // =========================================================
     // COUNTDOWN
     // =========================================================
@@ -504,29 +454,23 @@ public class TransitionManager : MonoBehaviour
         if (countdownText == null)
             yield break;
 
-
         countdownText.gameObject.SetActive(true);
 
         countdownText.text = text;
 
-
         countdownText.transform.localScale =
             Vector3.one * 0.6f;
 
-
         float elapsed = 0f;
-
 
         while (elapsed < 0.15f)
         {
             elapsed += Time.deltaTime;
 
-
             float t =
                 Mathf.Clamp01(
                     elapsed / 0.15f
                 );
-
 
             t =
                 Mathf.SmoothStep(
@@ -535,7 +479,6 @@ public class TransitionManager : MonoBehaviour
                     t
                 );
 
-
             countdownText.transform.localScale =
                 Vector3.Lerp(
                     Vector3.one * 0.6f,
@@ -543,19 +486,15 @@ public class TransitionManager : MonoBehaviour
                     t
                 );
 
-
             yield return null;
         }
-
 
         countdownText.transform.localScale =
             Vector3.one;
 
-
         yield return new WaitForSeconds(
             countdownStepDuration
         );
-
 
         if (text == "GO!")
         {
@@ -567,7 +506,6 @@ public class TransitionManager : MonoBehaviour
         }
     }
 
-
     // =========================================================
     // SLIDE PANEL IN
     // =========================================================
@@ -577,6 +515,8 @@ public class TransitionManager : MonoBehaviour
         if (minigamePanel == null)
             yield break;
 
+        // Make absolutely sure it is active.
+        minigamePanel.gameObject.SetActive(true);
 
         Vector2 start =
             panelHiddenPosition;
@@ -584,25 +524,20 @@ public class TransitionManager : MonoBehaviour
         Vector2 end =
             panelShownPosition;
 
-
         float elapsed = 0f;
-
 
         minigamePanel.anchoredPosition =
             start;
 
-
         while (elapsed < panelSlideDuration)
         {
             elapsed += Time.deltaTime;
-
 
             float t =
                 Mathf.Clamp01(
                     elapsed /
                     panelSlideDuration
                 );
-
 
             t =
                 Mathf.SmoothStep(
@@ -611,7 +546,6 @@ public class TransitionManager : MonoBehaviour
                     t
                 );
 
-
             minigamePanel.anchoredPosition =
                 Vector2.Lerp(
                     start,
@@ -619,15 +553,12 @@ public class TransitionManager : MonoBehaviour
                     t
                 );
 
-
             yield return null;
         }
-
 
         minigamePanel.anchoredPosition =
             end;
     }
-
 
     // =========================================================
     // SLIDE PANEL OUT
@@ -638,28 +569,23 @@ public class TransitionManager : MonoBehaviour
         if (minigamePanel == null)
             yield break;
 
-
         Vector2 start =
             panelShownPosition;
 
         Vector2 end =
             panelHiddenPosition;
 
-
         float elapsed = 0f;
-
 
         while (elapsed < panelSlideDuration)
         {
             elapsed += Time.deltaTime;
-
 
             float t =
                 Mathf.Clamp01(
                     elapsed /
                     panelSlideDuration
                 );
-
 
             t =
                 Mathf.SmoothStep(
@@ -668,7 +594,6 @@ public class TransitionManager : MonoBehaviour
                     t
                 );
 
-
             minigamePanel.anchoredPosition =
                 Vector2.Lerp(
                     start,
@@ -676,15 +601,12 @@ public class TransitionManager : MonoBehaviour
                     t
                 );
 
-
             yield return null;
         }
-
 
         minigamePanel.anchoredPosition =
             end;
     }
-
 
     // =========================================================
     // END CHALLENGE
@@ -700,7 +622,6 @@ public class TransitionManager : MonoBehaviour
         );
     }
 
-
     // =========================================================
     // RETURN TO MAIN GAME
     // =========================================================
@@ -709,13 +630,11 @@ public class TransitionManager : MonoBehaviour
     {
         transitionRunning = true;
 
-
         // -----------------------------------------------------
         // 1. MINIGAME -> WIDE CAMERA
         // -----------------------------------------------------
 
         DisableAllMinigameCameras();
-
 
         if (wideCamera != null)
         {
@@ -723,18 +642,15 @@ public class TransitionManager : MonoBehaviour
                 widePriority;
         }
 
-
         yield return new WaitForSeconds(
             returnDelay
         );
-
 
         // -----------------------------------------------------
         // 2. DISABLE MINIGAME TABLES
         // -----------------------------------------------------
 
         DisableAllMinigameTables();
-
 
         // -----------------------------------------------------
         // 3. WIDE -> MAIN TABLE
@@ -746,11 +662,9 @@ public class TransitionManager : MonoBehaviour
                 topDownPriority;
         }
 
-
         yield return new WaitForSeconds(
             returnDelay
         );
-
 
         // -----------------------------------------------------
         // 4. TURN OFF WIDE
@@ -759,10 +673,27 @@ public class TransitionManager : MonoBehaviour
         if (wideCamera != null)
             wideCamera.Priority = 0;
 
+        // -----------------------------------------------------
+        // 5. HIDE WARIOWARE PANEL
+        // -----------------------------------------------------
+
+        if (minigamePanel != null)
+        {
+            minigamePanel.anchoredPosition =
+                panelHiddenPosition;
+
+            // Keep it ACTIVE so it can be reused next time.
+            minigamePanel.gameObject.SetActive(true);
+        }
+
+        if (instructionText != null)
+            instructionText.gameObject.SetActive(false);
+
+        if (countdownText != null)
+            countdownText.gameObject.SetActive(false);
 
         transitionRunning = false;
     }
-
 
     // =========================================================
     // IMMEDIATE MAIN GAME RETURN
@@ -780,8 +711,20 @@ public class TransitionManager : MonoBehaviour
                 topDownPriority;
 
         DisableAllMinigameTables();
-    }
 
+        if (minigamePanel != null)
+        {
+            minigamePanel.gameObject.SetActive(true);
+            minigamePanel.anchoredPosition =
+                panelHiddenPosition;
+        }
+
+        if (instructionText != null)
+            instructionText.gameObject.SetActive(false);
+
+        if (countdownText != null)
+            countdownText.gameObject.SetActive(false);
+    }
 
     // =========================================================
     // FORCE RETURN
@@ -797,24 +740,22 @@ public class TransitionManager : MonoBehaviour
 
         DisableAllMinigameTables();
 
-
         if (topDownCamera != null)
             topDownCamera.Priority =
                 topDownPriority;
 
-
         if (wideCamera != null)
             wideCamera.Priority = 0;
 
-
         if (minigamePanel != null)
+        {
+            minigamePanel.gameObject.SetActive(true);
             minigamePanel.anchoredPosition =
                 panelHiddenPosition;
-
+        }
 
         if (instructionText != null)
             instructionText.gameObject.SetActive(false);
-
 
         if (countdownText != null)
             countdownText.gameObject.SetActive(false);
