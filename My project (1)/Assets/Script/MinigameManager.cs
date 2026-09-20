@@ -1,53 +1,203 @@
+using System.Collections;
 using UnityEngine;
 
 public class MinigameManager : MonoBehaviour
 {
     public static MinigameManager Instance;
 
-    [Header("Challenge Settings")]
-    public int currentDifficulty = 1;
+    public const int PlayerCount = 4;
 
-    private CardColor challengeColor;
-    private bool challengerIsPlayer;
+    [Header("Difficulty")]
+    [SerializeField] private int baseDifficulty = 1;
+    [SerializeField] private int minimumDifficulty = 1;
+    [SerializeField] private int maximumDifficulty = 99;
+
+    private readonly int[] challengeCounts = new int[PlayerCount];
+    private readonly int[] presentationDifficultyBoosts = new int[PlayerCount];
+
+    [Header("Current Challenge")]
+    [SerializeField] private CardColor challengeColor = CardColor.Purple;
+    [SerializeField] private int challengerPlayerIndex = 0;
+    [SerializeField] private bool challengeIsPresentationOnly;
+
+    private bool waitingForActualMinigame;
+
+    public CardColor CurrentChallengeColor => challengeColor;
+    public int CurrentChallengerPlayerIndex => challengerPlayerIndex;
+    public bool CurrentChallengeIsPresentationOnly => challengeIsPresentationOnly;
 
     private void Awake()
     {
         Instance = this;
+        ResetAllPlayerDifficulty();
     }
 
-    // =========================================================
-    // START CHALLENGE
-    // =========================================================
+    // ============================================================
+    // DIFFICULTY
+    // ============================================================
+
+    public void ResetAllPlayerDifficulty()
+    {
+        for (int i = 0; i < PlayerCount; i++)
+        {
+            challengeCounts[i] = 0;
+            presentationDifficultyBoosts[i] = 0;
+        }
+    }
+
+    public int GetChallengeCount(int playerIndex)
+    {
+        if (!IsValidPlayerIndex(playerIndex))
+            return 0;
+
+        return challengeCounts[playerIndex];
+    }
+
+    public int GetPlayerDifficulty(int playerIndex)
+    {
+        if (!IsValidPlayerIndex(playerIndex))
+            return Mathf.Max(minimumDifficulty, baseDifficulty);
+
+        int difficulty =
+            Mathf.Max(
+                baseDifficulty,
+                challengeCounts[playerIndex]
+            );
+
+        difficulty += presentationDifficultyBoosts[playerIndex];
+
+        return Mathf.Clamp(
+            difficulty,
+            minimumDifficulty,
+            maximumDifficulty
+        );
+    }
+
+    // Kept for compatibility with existing GameManager code.
+    // It now means: difficulty of the player currently being challenged.
+    public int GetCurrentDifficulty()
+    {
+        int playerIndex = 0;
+
+        if (GameManager.Instance != null)
+            playerIndex = GameManager.Instance.currentPlayerIndex;
+
+        return GetPlayerDifficulty(playerIndex);
+    }
+
+    public int GetCurrentDifficulty(int playerIndex)
+    {
+        return GetPlayerDifficulty(playerIndex);
+    }
+
+    public void RegisterChallenge(int playerIndex)
+    {
+        if (!IsValidPlayerIndex(playerIndex))
+            return;
+
+        challengeCounts[playerIndex] = Mathf.Clamp(
+            challengeCounts[playerIndex] + 1,
+            0,
+            maximumDifficulty
+        );
+
+        Debug.Log(
+            $"Challenge started by Player {GetDisplayPlayerName(playerIndex)}. " +
+            $"Challenge count: {challengeCounts[playerIndex]}, " +
+            $"difficulty: {GetPlayerDifficulty(playerIndex)}"
+        );
+    }
+
+    public void AddPresentationDifficulty(int playerIndex, int amount = 1)
+    {
+        if (!IsValidPlayerIndex(playerIndex))
+            return;
+
+        if (amount <= 0)
+            return;
+
+        presentationDifficultyBoosts[playerIndex] = Mathf.Clamp(
+            presentationDifficultyBoosts[playerIndex] + amount,
+            0,
+            maximumDifficulty
+        );
+
+        Debug.Log(
+            $"PRESENTATION DEBUG: {GetDisplayPlayerName(playerIndex)} difficulty increased. " +
+            $"Difficulty is now {GetPlayerDifficulty(playerIndex)}"
+        );
+    }
+
+    public void RemovePresentationDifficulty(int playerIndex, int amount = 1)
+    {
+        if (!IsValidPlayerIndex(playerIndex))
+            return;
+
+        if (amount <= 0)
+            return;
+
+        presentationDifficultyBoosts[playerIndex] = Mathf.Max(
+            0,
+            presentationDifficultyBoosts[playerIndex] - amount
+        );
+    }
+
+    // ============================================================
+    // REAL CHALLENGE
+    // ============================================================
 
     public void StartChallenge(
         CardColor color,
         bool playerIsChallenger)
     {
-        challengeColor = color;
-        challengerIsPlayer =
-            playerIsChallenger;
+        int playerIndex =
+            GameManager.Instance != null
+                ? GameManager.Instance.currentPlayerIndex
+                : 0;
 
-        Debug.Log(
-            "MinigameManager: Challenge started. " +
-            "Color = " + color +
-            ", Player Challenger = " +
-            playerIsChallenger +
-            ", Difficulty = " +
-            currentDifficulty
+        StartChallengeInternal(
+            color,
+            playerIndex,
+            false
         );
+    }
 
-        if (TransitionManager.Instance == null)
+    private void StartChallengeInternal(
+        CardColor color,
+        int playerIndex,
+        bool presentationOnly)
+    {
+        if (!IsValidPlayerIndex(playerIndex))
+            playerIndex = 0;
+
+        challengeColor = color;
+        challengerPlayerIndex = playerIndex;
+        challengeIsPresentationOnly = presentationOnly;
+        waitingForActualMinigame = true;
+
+        if (GameManager.Instance != null)
         {
-            Debug.LogError(
-                "MinigameManager: " +
-                "TransitionManager.Instance is missing."
-            );
-
-            return;
+            GameManager.Instance.state =
+                GameState.CameraTransition;
         }
 
         string instruction =
             GetInstruction(color);
+
+        if (TransitionManager.Instance == null)
+        {
+            Debug.LogError(
+                "MinigameManager: TransitionManager.Instance is missing. " +
+                "Assign TransitionManager to the scene before starting a minigame."
+            );
+
+            waitingForActualMinigame = false;
+
+            if (GameManager.Instance != null)
+                GameManager.Instance.state = GameState.Playing;
+
+            return;
+        }
 
         TransitionManager.Instance.StartChallenge(
             color,
@@ -55,17 +205,59 @@ public class MinigameManager : MonoBehaviour
         );
     }
 
-    // =========================================================
-    // START ACTUAL MINIGAME
-    // =========================================================
+    // ============================================================
+    // PRESENTATION / SECRET KEY MINIGAME
+    // ============================================================
 
+    public void StartPresentationMinigame(
+        CardColor color,
+        int targetPlayerIndex)
+    {
+        if (!IsValidPlayerIndex(targetPlayerIndex))
+            targetPlayerIndex = 0;
+
+        if (waitingForActualMinigame)
+        {
+            Debug.LogWarning(
+                "MinigameManager: A minigame is already running. " +
+                "The presentation key was ignored."
+            );
+
+            return;
+        }
+
+        Debug.Log(
+            $"PRESENTATION DEBUG: Starting {color} minigame for " +
+            $"{GetDisplayPlayerName(targetPlayerIndex)} at difficulty " +
+            $"{GetPlayerDifficulty(targetPlayerIndex)}."
+        );
+
+        StartChallengeInternal(
+            color,
+            targetPlayerIndex,
+            true
+        );
+    }
+
+    // Called by TransitionManager after its camera / WarioWare sequence.
     public void StartActualMinigame()
     {
+        if (!waitingForActualMinigame)
+            return;
+
+        waitingForActualMinigame = false;
+
+        if (GameManager.Instance != null)
+            GameManager.Instance.state = GameState.Minigame;
+
+        int difficulty =
+            GetPlayerDifficulty(challengerPlayerIndex);
+
         Debug.Log(
-            "MinigameManager: Starting actual minigame. " +
-            challengeColor +
-            " | Difficulty " +
-            currentDifficulty
+            $"MINIGAME STARTED: {challengeColor} | " +
+            $"Challenger: {GetDisplayPlayerName(challengerPlayerIndex)} | " +
+            $"Difficulty: {difficulty} | " +
+            $"Presentation Only: {challengeIsPresentationOnly}"
         );
 
         switch (challengeColor)
@@ -86,118 +278,66 @@ public class MinigameManager : MonoBehaviour
                 StartKnowledgeGame();
                 break;
 
-            case CardColor.Wild:
+            default:
                 StartKnowledgeGame();
                 break;
-
-            default:
-                Debug.LogWarning(
-                    "Unknown challenge color."
-                );
-                break;
         }
     }
 
-    // =========================================================
-    // INSTRUCTIONS
-    // =========================================================
-
-    private string GetInstruction(
-        CardColor color)
-    {
-        switch (color)
-        {
-            case CardColor.Yellow:
-                return
-                    "ADD THE DICE AS FAST AS YOU CAN!";
-
-            case CardColor.Red:
-                return
-                    "KEEP YOUR BALANCE!";
-
-            case CardColor.Green:
-                return
-                    "TEST YOUR LUCK!";
-
-            case CardColor.Purple:
-                return
-                    "ANSWER THE QUESTION!";
-
-            default:
-                return
-                    "GET READY!";
-        }
-    }
-
-    // =========================================================
-    // MINIGAMES
-    // =========================================================
+    // ============================================================
+    // MINIGAME ENTRY POINTS
+    // These are the real routing points for the individual
+    // minigame scripts we are adding next.
+    // ============================================================
 
     private void StartSpeedGame()
     {
         Debug.Log(
-            "SPEED MINIGAME STARTED"
+            $"Speed minigame requested at difficulty " +
+            GetPlayerDifficulty(challengerPlayerIndex) + "."
         );
-
-        // Actual Speed minigame later.
-        //
-        // Yellow = Speed
-        // Dice addition.
     }
 
     private void StartPhysicalGame()
     {
         Debug.Log(
-            "PHYSICAL MINIGAME STARTED"
+            $"Physical minigame requested at difficulty " +
+            GetPlayerDifficulty(challengerPlayerIndex) + "."
         );
-
-        // Actual Physical minigame later.
-        //
-        // Red = Physical
-        // Balance challenge.
     }
 
     private void StartLuckGame()
     {
         Debug.Log(
-            "LUCK MINIGAME STARTED"
+            $"Luck minigame requested at difficulty " +
+            GetPlayerDifficulty(challengerPlayerIndex) + "."
         );
-
-        // Actual Luck minigame later.
-        //
-        // Green = Luck.
     }
 
     private void StartKnowledgeGame()
     {
         Debug.Log(
-            "KNOWLEDGE MINIGAME STARTED"
+            $"Knowledge minigame requested at difficulty " +
+            GetPlayerDifficulty(challengerPlayerIndex) + "."
         );
-
-        // Actual Knowledge minigame later.
-        //
-        // Purple = Knowledge.
     }
 
-    // =========================================================
-    // PLAYER/ACTUAL MINIGAME FINISHED
-    // =========================================================
+    // ============================================================
+    // MINIGAME RESULTS
+    // ============================================================
 
-    public void OnMinigameCompleted(
-        bool challengerWon)
+    public void OnMinigameCompleted(bool challengerWon)
     {
-        Debug.Log(
-            "MinigameManager: " +
-            "Minigame completed. Challenger won = " +
-            challengerWon
-        );
+        if (challengeIsPresentationOnly)
+        {
+            FinishPresentationMinigame(challengerWon);
+            return;
+        }
 
-        currentDifficulty++;
+        challengeIsPresentationOnly = false;
 
         if (TransitionManager.Instance != null)
-        {
             TransitionManager.Instance.EndChallenge();
-        }
 
         if (GameManager.Instance != null)
         {
@@ -207,54 +347,83 @@ public class MinigameManager : MonoBehaviour
         }
     }
 
-    // =========================================================
-    // COMPATIBILITY
-    // =========================================================
-
-    public void OnMinigameCompleted()
+    public void CompleteAIChallenge(bool challengerWon)
     {
-        OnMinigameCompleted(true);
+        challengeIsPresentationOnly = false;
+
+        if (GameManager.Instance != null)
+        {
+            GameManager.Instance.ChallengeFinished(
+                challengerWon
+            );
+        }
     }
 
-    // =========================================================
-    // AI CHALLENGE FINISHED
-    // =========================================================
-
-    public void CompleteAIChallenge(
-        bool challengerWon)
+    private void FinishPresentationMinigame(bool challengerWon)
     {
         Debug.Log(
-            "MinigameManager: " +
-            "AI challenge simulated. Won = " +
-            challengerWon
+            $"PRESENTATION DEBUG: Minigame finished. " +
+            $"{GetDisplayPlayerName(challengerPlayerIndex)} " +
+            (challengerWon ? "WON." : "LOST.")
         );
 
-        currentDifficulty++;
+        challengeIsPresentationOnly = false;
+        waitingForActualMinigame = false;
+
+        if (TransitionManager.Instance != null)
+            TransitionManager.Instance.EndChallenge();
 
         if (GameManager.Instance != null)
         {
-            GameManager.Instance.ChallengeFinished(
-                challengerWon
-            );
+            GameManager.Instance.state = GameState.Playing;
         }
     }
 
-    // =========================================================
-    // GETTERS
-    // =========================================================
+    // ============================================================
+    // INSTRUCTIONS
+    // ============================================================
 
-    public CardColor GetChallengeColor()
+    public string GetInstruction(CardColor color)
     {
-        return challengeColor;
+        switch (color)
+        {
+            case CardColor.Yellow:
+                return "ADD THE DICE!";
+
+            case CardColor.Red:
+                return "KEEP BALANCE!";
+
+            case CardColor.Green:
+                return "PICK THE HAT!";
+
+            case CardColor.Purple:
+                return "ANSWER!";
+
+            default:
+                return "GET READY!";
+        }
     }
 
-    public bool IsPlayerChallenger()
+    public string GetDisplayPlayerName(int playerIndex)
     {
-        return challengerIsPlayer;
+        switch (playerIndex)
+        {
+            case 0:
+                return "PLAYER";
+            case 1:
+                return "AI 1";
+            case 2:
+                return "AI 2";
+            case 3:
+                return "AI 3";
+            default:
+                return "PLAYER";
+        }
     }
 
-    public int GetCurrentDifficulty()
+    private bool IsValidPlayerIndex(int playerIndex)
     {
-        return currentDifficulty;
+        return playerIndex >= 0 &&
+               playerIndex < PlayerCount;
     }
 }

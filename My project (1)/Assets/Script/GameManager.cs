@@ -253,6 +253,11 @@ public class GameManager : MonoBehaviour
 
         state = GameState.Playing;
 
+        if (MinigameManager.Instance != null)
+        {
+            MinigameManager.Instance.ResetAllPlayerDifficulty();
+        }
+
         currentPlayerIndex = 0;
 
         turnDirection = 1;
@@ -1744,7 +1749,7 @@ public class GameManager : MonoBehaviour
         {
             difficulty =
                 MinigameManager.Instance
-                    .GetCurrentDifficulty();
+                    .GetCurrentDifficulty(currentPlayerIndex);
         }
 
         bool challenge =
@@ -1758,6 +1763,17 @@ public class GameManager : MonoBehaviour
 
         if (challenge)
         {
+            if (MinigameManager.Instance != null)
+            {
+                MinigameManager.Instance.RegisterChallenge(
+                    currentPlayerIndex
+                );
+
+                difficulty =
+                    MinigameManager.Instance
+                        .GetCurrentDifficulty(currentPlayerIndex);
+            }
+
             bool challengerWon =
                 opponent.SimulateMinigame(
                     difficulty
@@ -1833,7 +1849,7 @@ public class GameManager : MonoBehaviour
         {
             difficulty =
                 MinigameManager.Instance
-                    .GetCurrentDifficulty();
+                    .GetCurrentDifficulty(currentPlayerIndex);
         }
 
         if (!playerIsChallenger)
@@ -1871,6 +1887,16 @@ public class GameManager : MonoBehaviour
 
             return;
         }
+
+        // The player/AI has actually committed to the challenge here.
+        // Increase only that challenger's personal progression.
+        MinigameManager.Instance.RegisterChallenge(
+            currentPlayerIndex
+        );
+
+        difficulty =
+            MinigameManager.Instance
+                .GetCurrentDifficulty(currentPlayerIndex);
 
         state =
             GameState.CameraTransition;
