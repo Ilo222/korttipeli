@@ -7,40 +7,87 @@ public class GameManager : MonoBehaviour
 {
     public static GameManager Instance;
 
+    // ============================================================
+    // GAME STATE
+    // ============================================================
+
     [Header("Game State")]
     public GameState state = GameState.Playing;
 
+    // ============================================================
+    // CARD PREFAB
+    // ============================================================
+
     [Header("Card Prefab")]
     [SerializeField] private GameObject cardPrefab;
+
+    // ============================================================
+    // TABLE POSITIONS
+    // ============================================================
 
     [Header("Table Positions")]
     [SerializeField] private Transform drawPilePosition;
     [SerializeField] private Transform discardPilePosition;
 
+    // ============================================================
+    // PLAYER HAND
+    // ============================================================
+
     [Header("Player Hand")]
     [SerializeField] private Transform playerHandCenter;
     [SerializeField] private HandLayout playerHandLayout;
+
+    // ============================================================
+    // AI 1
+    // ============================================================
 
     [Header("AI 1")]
     [SerializeField] private Transform ai1HandCenter;
     [SerializeField] private AIHandLayout ai1HandLayout;
     [SerializeField] private AIOpponent ai1;
 
+    // ============================================================
+    // AI 2
+    // ============================================================
+
     [Header("AI 2")]
     [SerializeField] private Transform ai2HandCenter;
     [SerializeField] private AIHandLayout ai2HandLayout;
     [SerializeField] private AIOpponent ai2;
+
+    // ============================================================
+    // AI 3
+    // ============================================================
 
     [Header("AI 3")]
     [SerializeField] private Transform ai3HandCenter;
     [SerializeField] private AIHandLayout ai3HandLayout;
     [SerializeField] private AIOpponent ai3;
 
+    // ============================================================
+    // UI
+    // ============================================================
+
     [Header("UI")]
     [SerializeField] private TextMeshProUGUI turnText;
+    [SerializeField] private TextMeshProUGUI currentColorText;
+    [SerializeField] private TextMeshProUGUI drawPenaltyText;
+    [SerializeField] private TextMeshProUGUI specialEffectText;
+    [SerializeField] private ChallengePanel challengePanel;
+
+    [Header("UI Feedback")]
+    [SerializeField] private float specialEffectDuration = 1.35f;
+
+    // ============================================================
+    // STARTING HAND
+    // ============================================================
 
     [Header("Starting Hand")]
     [SerializeField] private int startingCards = 7;
+
+    // ============================================================
+    // SPECIAL CARD COUNTS
+    // ============================================================
 
     [Header("Special Card Counts")]
     [SerializeField] private int draw2Copies = 1;
@@ -49,12 +96,24 @@ public class GameManager : MonoBehaviour
     [SerializeField] private int skipCopies = 1;
     [SerializeField] private int colorChangeCopies = 1;
 
+    // ============================================================
+    // DRAW PILE VISUAL
+    // ============================================================
+
     [Header("Draw Pile Visual")]
     [SerializeField] private int drawPileVisualCards = 10;
     [SerializeField] private float drawPileCardOffset = 0.015f;
 
+    // ============================================================
+    // DRAW RULES
+    // ============================================================
+
     [Header("Draw Rules")]
     [SerializeField] private int maximumPlayerDraws = 3;
+
+    // ============================================================
+    // CARD ANIMATIONS
+    // ============================================================
 
     [Header("Card Animations")]
     [SerializeField] private float drawAnimationTime = 0.22f;
@@ -64,8 +123,16 @@ public class GameManager : MonoBehaviour
     [SerializeField] private float playArcHeight = 0.45f;
     [SerializeField] private float playSpinDegrees = 90f;
 
+    // ============================================================
+    // AI
+    // ============================================================
+
     [Header("AI")]
     [SerializeField] private float aiThinkingTime = 0.35f;
+
+    // ============================================================
+    // HANDS
+    // ============================================================
 
     [Header("Hands")]
     public List<CardData> playerHand =
@@ -80,6 +147,10 @@ public class GameManager : MonoBehaviour
     public List<CardData> ai3Hand =
         new List<CardData>();
 
+    // ============================================================
+    // VISUAL CARDS
+    // ============================================================
+
     [Header("Visual Cards")]
     public List<Card3D> playerVisualCards =
         new List<Card3D>();
@@ -93,11 +164,26 @@ public class GameManager : MonoBehaviour
     public List<Card3D> ai3VisualCards =
         new List<Card3D>();
 
+    // ============================================================
+    // DECK
+    // ============================================================
+
     [Header("Deck")]
     public List<CardData> deck =
         new List<CardData>();
 
     public CardData currentTopCard;
+
+    // ============================================================
+    // ACTIVE COLOR
+    // ============================================================
+
+    [Header("Active Color")]
+    public CardColor activeColor = CardColor.Wild;
+
+    // ============================================================
+    // TURN
+    // ============================================================
 
     [Header("Turn")]
     public int currentPlayerIndex = 0;
@@ -107,10 +193,47 @@ public class GameManager : MonoBehaviour
     // 2 = AI 2
     // 3 = AI 3
 
+    // 1 = clockwise
+    // -1 = reverse
+    private int turnDirection = 1;
+
     public bool PlayerTurn =>
         currentPlayerIndex == 0;
 
+    // ============================================================
+    // PLAYER DRAW COUNT
+    // ============================================================
+
     private int playerDrawCount;
+
+    private bool playerDrewPlayableCardThisTurn;
+
+    // ============================================================
+    // STACKING
+    // ============================================================
+
+    [Header("Draw Stack")]
+    [SerializeField] private int pendingDrawAmount = 0;
+
+    [SerializeField]
+    private CardType pendingDrawType =
+        CardType.Number;
+
+    // ============================================================
+    // CHALLENGE
+    // ============================================================
+
+    private CardData pendingSpecialCard;
+
+    private int pendingSpecialPlayerIndex = -1;
+
+    private bool waitingForWildColor;
+
+    private Coroutine specialEffectRoutine;
+
+    // ============================================================
+    // DISCARD VISUAL
+    // ============================================================
 
     private Card3D currentDiscardVisual;
 
@@ -137,18 +260,47 @@ public class GameManager : MonoBehaviour
         StopAllCoroutines();
 
         state = GameState.Playing;
+
+        if (MinigameManager.Instance != null)
+        {
+            MinigameManager.Instance.ResetAllPlayerDifficulty();
+        }
+
         currentPlayerIndex = 0;
+
+        turnDirection = 1;
+
         playerDrawCount = 0;
+
+        playerDrewPlayableCardThisTurn = false;
+
+        pendingDrawAmount = 0;
+
+        pendingDrawType = CardType.Number;
+
+        pendingSpecialCard = null;
+
+        pendingSpecialPlayerIndex = -1;
+
+        waitingForWildColor = false;
+
+        activeColor = CardColor.Wild;
 
         BuildDeck();
         ShuffleDeck();
 
         DealInitialHands();
+
         PlaceStartingCard();
+
         SpawnDrawPileVisual();
 
         RefreshAllHands();
+
         UpdateTurnUI();
+        HideSpecialEffect();
+
+        HideChallengePanel();
 
         Debug.Log(
             $"GAME STARTED. Remaining deck: {deck.Count}"
@@ -171,10 +323,15 @@ public class GameManager : MonoBehaviour
             CardColor.Red
         };
 
-        // Number cards 0-4.
+        // --------------------------------------------------------
+        // Number cards 0-4
+        // --------------------------------------------------------
+
         foreach (CardColor color in colors)
         {
-            for (int number = 0; number <= 4; number++)
+            for (int number = 0;
+                 number <= 4;
+                 number++)
             {
                 deck.Add(
                     new CardData(
@@ -186,37 +343,69 @@ public class GameManager : MonoBehaviour
             }
         }
 
-        AddSpecialCards(
+        // --------------------------------------------------------
+        // Draw 2
+        // --------------------------------------------------------
+
+        AddColoredSpecialCards(
             CardType.Draw2,
             draw2Copies
         );
 
-        AddSpecialCards(
+        // --------------------------------------------------------
+        // Draw 4
+        // --------------------------------------------------------
+
+        AddColoredSpecialCards(
             CardType.Draw4,
             draw4Copies
         );
 
-        AddSpecialCards(
+        // --------------------------------------------------------
+        // Reverse
+        // --------------------------------------------------------
+
+        AddColoredSpecialCards(
             CardType.Reverse,
             reverseCopies
         );
 
-        AddSpecialCards(
+        // --------------------------------------------------------
+        // Skip
+        // --------------------------------------------------------
+
+        AddColoredSpecialCards(
             CardType.Skip,
             skipCopies
         );
 
-        AddSpecialCards(
-            CardType.ColorChange,
-            colorChangeCopies
-        );
+        // --------------------------------------------------------
+        // Color Change / Wild
+        // --------------------------------------------------------
+
+        for (int i = 0;
+             i < colorChangeCopies * 4;
+             i++)
+        {
+            deck.Add(
+                new CardData(
+                    CardColor.Wild,
+                    CardType.ColorChange,
+                    -1
+                )
+            );
+        }
 
         Debug.Log(
             $"Deck built: {deck.Count} cards"
         );
     }
 
-    private void AddSpecialCards(
+    // ============================================================
+    // ADD COLORED SPECIALS
+    // ============================================================
+
+    private void AddColoredSpecialCards(
         CardType type,
         int copies)
     {
@@ -228,7 +417,9 @@ public class GameManager : MonoBehaviour
             CardColor.Red
         };
 
-        for (int i = 0; i < copies; i++)
+        for (int i = 0;
+             i < copies;
+             i++)
         {
             foreach (CardColor color in colors)
             {
@@ -243,12 +434,21 @@ public class GameManager : MonoBehaviour
         }
     }
 
+    // ============================================================
+    // SHUFFLE
+    // ============================================================
+
     private void ShuffleDeck()
     {
-        for (int i = deck.Count - 1; i > 0; i--)
+        for (int i = deck.Count - 1;
+             i > 0;
+             i--)
         {
             int random =
-                Random.Range(0, i + 1);
+                Random.Range(
+                    0,
+                    i + 1
+                );
 
             CardData temp =
                 deck[i];
@@ -274,11 +474,16 @@ public class GameManager : MonoBehaviour
 
         DestroyAllHandVisuals();
 
-        for (int i = 0; i < startingCards; i++)
+        for (int i = 0;
+             i < startingCards;
+             i++)
         {
             DrawToPlayerImmediate();
+
             DrawToAIImmediate(1);
+
             DrawToAIImmediate(2);
+
             DrawToAIImmediate(3);
         }
     }
@@ -310,7 +515,7 @@ public class GameManager : MonoBehaviour
     }
 
     // ============================================================
-    // INITIAL HAND DRAW
+    // INITIAL PLAYER DRAW
     // ============================================================
 
     private void DrawToPlayerImmediate()
@@ -331,9 +536,15 @@ public class GameManager : MonoBehaviour
 
         if (visual != null)
         {
-            playerVisualCards.Add(visual);
+            playerVisualCards.Add(
+                visual
+            );
         }
     }
+
+    // ============================================================
+    // INITIAL AI DRAW
+    // ============================================================
 
     private void DrawToAIImmediate(
         int playerIndex)
@@ -370,6 +581,8 @@ public class GameManager : MonoBehaviour
 
         if (visual != null)
         {
+            visual.SetCardBackVisible(true);
+
             visuals.Add(visual);
         }
     }
@@ -382,13 +595,18 @@ public class GameManager : MonoBehaviour
     {
         CardData startingCard = null;
 
-        // Start with a number card.
-        for (int i = deck.Count - 1; i >= 0; i--)
+        for (int i = deck.Count - 1;
+             i >= 0;
+             i--)
         {
-            if (deck[i].type == CardType.Number)
+            if (deck[i].type ==
+                CardType.Number)
             {
-                startingCard = deck[i];
+                startingCard =
+                    deck[i];
+
                 deck.RemoveAt(i);
+
                 break;
             }
         }
@@ -404,6 +622,9 @@ public class GameManager : MonoBehaviour
 
         currentTopCard =
             startingCard;
+
+        activeColor =
+            startingCard.color;
 
         SpawnDiscardCard(
             startingCard
@@ -429,8 +650,8 @@ public class GameManager : MonoBehaviour
         if (clickedCard.data == null)
             return;
 
-        if (!clickedCard.data.CanPlay(
-                currentTopCard))
+        if (!CanPlayCardNow(
+                clickedCard.data))
         {
             Debug.Log(
                 "That card cannot be played."
@@ -439,116 +660,227 @@ public class GameManager : MonoBehaviour
             return;
         }
 
+        List<CardData> cardsToPlay =
+            BuildPlayerPlayGroup(
+                clickedCard.data
+            );
+
         StartCoroutine(
-            PlayCardRoutine(
-                clickedCard
+            PlayPlayerCardGroupRoutine(
+                cardsToPlay
             )
         );
     }
 
-    private IEnumerator PlayCardRoutine(
-        Card3D clickedCard)
+    // ============================================================
+    // PLAYER CARD GROUP
+    // ============================================================
+
+    private List<CardData> BuildPlayerPlayGroup(
+        CardData clicked)
     {
+        List<CardData> group =
+            new List<CardData>();
+
+        if (clicked == null)
+            return group;
+
+        // Specials are always played alone.
+        if (clicked.type != CardType.Number)
+        {
+            group.Add(clicked);
+
+            return group;
+        }
+
+        // Same-number cards are played together.
+        foreach (CardData card in playerHand)
+        {
+            if (card == null)
+                continue;
+
+            if (card.type != CardType.Number)
+                continue;
+
+            if (card.number == clicked.number)
+                group.Add(card);
+        }
+
+        // Safety.
+        if (group.Count == 0)
+            group.Add(clicked);
+
+        return group;
+    }
+
+    // ============================================================
+    // PLAYER CARD GROUP ROUTINE
+    // ============================================================
+
+    private IEnumerator PlayPlayerCardGroupRoutine(
+        List<CardData> cards)
+    {
+        if (cards == null ||
+            cards.Count == 0)
+        {
+            state =
+                GameState.Playing;
+
+            yield break;
+        }
+
         state =
             GameState.ResolvingChallenge;
 
-        CardData playedCard =
-            clickedCard.data;
+        // --------------------------------------------------------
+        // Find visual cards first.
+        // --------------------------------------------------------
 
-        // Remove from logical hand.
-        playerHand.Remove(
-            playedCard
-        );
+        List<Card3D> visuals =
+            new List<Card3D>();
 
-        // Remove from visual hand.
-        playerVisualCards.Remove(
-            clickedCard
-        );
-
-        clickedCard.SetHovered(false);
-        clickedCard.SetAnimationLocked(true);
-
-        // Remove old discard visual.
-        if (currentDiscardVisual != null)
+        foreach (CardData card in cards)
         {
-            Destroy(
-                currentDiscardVisual.gameObject
-            );
+            Card3D visual =
+                FindVisualForCard(
+                    playerVisualCards,
+                    card
+                );
 
-            currentDiscardVisual = null;
+            if (visual != null)
+                visuals.Add(visual);
         }
 
-        // Save where card starts.
-        Vector3 startPosition =
-            clickedCard.transform.position;
+        // --------------------------------------------------------
+        // Remove logical cards and visuals.
+        // --------------------------------------------------------
 
-        Quaternion startRotation =
-            clickedCard.transform.rotation;
+        foreach (CardData card in cards)
+            playerHand.Remove(card);
 
-        // Detach from hand.
-        clickedCard.transform.SetParent(
-            null,
-            true
-        );
+        foreach (Card3D visual in visuals)
+            playerVisualCards.Remove(visual);
 
-        Vector3 targetPosition =
-            discardPilePosition.position;
+        // --------------------------------------------------------
+        // Lock visuals.
+        // --------------------------------------------------------
 
-        Quaternion targetRotation =
-            discardPilePosition.rotation;
+        foreach (Card3D visual in visuals)
+        {
+            visual.SetHovered(false);
 
-        // Animate from hand to discard.
-        yield return AnimatePlayCard(
-            clickedCard,
-            startPosition,
-            startRotation,
-            targetPosition,
-            targetRotation
-        );
+            visual.SetAnimationLocked(true);
+        }
 
-        // Put it under discard pile.
-        clickedCard.transform.SetParent(
-            discardPilePosition,
-            true
-        );
+        // --------------------------------------------------------
+        // Refresh remaining hand.
+        // --------------------------------------------------------
 
-        clickedCard.transform.position =
-            targetPosition;
-
-        clickedCard.transform.rotation =
-            targetRotation;
-
-        clickedCard.transform.localScale =
-            Vector3.one;
-
-        clickedCard.SetAnimationLocked(false);
-
-        clickedCard.CaptureCurrentTransformAsNormal();
-
-        DisableCardColliders(
-            clickedCard.gameObject
-        );
-
-        currentDiscardVisual =
-            clickedCard;
-
-        currentTopCard =
-            playedCard;
-
-        // The player's draw counter resets
-        // after actually playing a card.
-        playerDrawCount = 0;
-
-        // Remaining cards slide into their
-        // new hand positions.
         RefreshAllHands();
 
-        // For now specials still just advance.
-        // We will replace this with the special
-        // card system next.
-        ResolvePlayedCard(
-            playedCard,
-            0
+        // --------------------------------------------------------
+        // Clear old discard.
+        // --------------------------------------------------------
+
+        ClearDiscardVisuals();
+
+        // --------------------------------------------------------
+        // Animate every card in the group.
+        // --------------------------------------------------------
+
+        for (int i = 0;
+             i < visuals.Count;
+             i++)
+        {
+            Card3D visual =
+                visuals[i];
+
+            if (visual == null)
+                continue;
+
+            Vector3 startPosition =
+                visual.transform.position;
+
+            Quaternion startRotation =
+                visual.transform.rotation;
+
+            visual.transform.SetParent(
+                null,
+                true
+            );
+
+            Vector3 targetPosition =
+                discardPilePosition.position;
+
+            targetPosition +=
+                Vector3.up *
+                (i * 0.012f);
+
+            Quaternion targetRotation =
+                discardPilePosition.rotation;
+
+            yield return AnimatePlayCard(
+                visual,
+                startPosition,
+                startRotation,
+                targetPosition,
+                targetRotation
+            );
+
+            visual.transform.SetParent(
+                discardPilePosition,
+                true
+            );
+
+            visual.transform.position =
+                targetPosition;
+
+            visual.transform.rotation =
+                targetRotation;
+
+            visual.transform.localScale =
+                Vector3.one;
+
+            visual.SetAnimationLocked(false);
+
+            visual.CaptureCurrentTransformAsNormal();
+
+            DisableCardColliders(
+                visual.gameObject
+            );
+
+            currentDiscardVisual =
+                visual;
+        }
+
+        if (cards.Count == 0)
+        {
+            state =
+                GameState.Playing;
+
+            yield break;
+        }
+
+        CardData finalCard =
+            cards[cards.Count - 1];
+
+        currentTopCard =
+            finalCard;
+
+        playerDrawCount = 0;
+
+        playerDrewPlayableCardThisTurn =
+            false;
+
+        // --------------------------------------------------------
+        // Resolve.
+        // --------------------------------------------------------
+
+        yield return StartCoroutine(
+            ResolvePlayedCardAfterAnimation(
+                finalCard,
+                0
+            )
         );
     }
 
@@ -564,6 +896,23 @@ public class GameManager : MonoBehaviour
         if (!PlayerTurn)
             return;
 
+        // --------------------------------------------------------
+        // If a draw penalty is active, accept it immediately.
+        // --------------------------------------------------------
+
+        if (pendingDrawAmount > 0)
+        {
+            StartCoroutine(
+                PlayerTakePenaltyRoutine()
+            );
+
+            return;
+        }
+
+        // --------------------------------------------------------
+        // Normal draw limit.
+        // --------------------------------------------------------
+
         if (playerDrawCount >= maximumPlayerDraws)
         {
             Debug.Log(
@@ -577,6 +926,10 @@ public class GameManager : MonoBehaviour
             PlayerDrawCardRoutine()
         );
     }
+
+    // ============================================================
+    // NORMAL PLAYER DRAW
+    // ============================================================
 
     private IEnumerator PlayerDrawCardRoutine()
     {
@@ -596,7 +949,17 @@ public class GameManager : MonoBehaviour
             yield break;
         }
 
-        // Create visual first.
+        bool drawnCardPlayable =
+            CanPlayCardNow(
+                drawnCard
+            );
+
+        if (drawnCardPlayable)
+        {
+            playerDrewPlayableCardThisTurn =
+                true;
+        }
+
         Card3D visual =
             SpawnHandCard(
                 drawnCard,
@@ -619,7 +982,6 @@ public class GameManager : MonoBehaviour
             visual
         );
 
-        // Temporarily calculate the final hand position.
         RefreshAllHands();
 
         Vector3 finalWorldPosition =
@@ -628,7 +990,6 @@ public class GameManager : MonoBehaviour
         Quaternion finalWorldRotation =
             visual.transform.rotation;
 
-        // Detach before flying.
         visual.transform.SetParent(
             null,
             true
@@ -636,7 +997,6 @@ public class GameManager : MonoBehaviour
 
         visual.SetAnimationLocked(true);
 
-        // Start at the draw pile.
         Vector3 startPosition =
             drawPilePosition.position;
 
@@ -654,10 +1014,8 @@ public class GameManager : MonoBehaviour
         visual.transform.localScale =
             Vector3.one;
 
-        // Start hidden.
         visual.SetCardBackVisible(true);
 
-        // Animate.
         yield return AnimateDrawCard(
             visual,
             startPosition,
@@ -666,7 +1024,6 @@ public class GameManager : MonoBehaviour
             finalWorldRotation
         );
 
-        // Reattach to the hand.
         visual.transform.SetParent(
             playerHandCenter,
             true
@@ -689,32 +1046,144 @@ public class GameManager : MonoBehaviour
 
         RefreshAllHands();
 
-        bool playable =
-            HasPlayableCard(
-                playerHand
-            );
+        // --------------------------------------------------------
+        // Three unplayable drawn cards = skip turn.
+        // --------------------------------------------------------
 
-        // Three draws with no playable card.
         if (playerDrawCount >= maximumPlayerDraws &&
-            !playable)
+            !playerDrewPlayableCardThisTurn)
         {
             Debug.Log(
                 "Drew 3 cards without finding " +
-                "a playable card. Turn skipped."
+                "a playable drawn card. Turn skipped."
             );
 
             playerDrawCount = 0;
+
+            playerDrewPlayableCardThisTurn =
+                false;
 
             GoToNextPlayer();
 
             yield break;
         }
 
-        // Player remains in control.
         state =
             GameState.Playing;
 
         UpdateTurnUI();
+    }
+
+    // ============================================================
+    // PLAYER TAKES DRAW PENALTY
+    // ============================================================
+
+    private IEnumerator PlayerTakePenaltyRoutine()
+    {
+        state =
+            GameState.ResolvingChallenge;
+
+        int amount =
+            pendingDrawAmount;
+
+        pendingDrawAmount = 0;
+
+        pendingDrawType =
+            CardType.Number;
+
+        UpdateGameplayUI();
+
+        for (int i = 0;
+             i < amount;
+             i++)
+        {
+            CardData card =
+                DrawFromDeck();
+
+            if (card == null)
+                break;
+
+            Card3D visual =
+                SpawnHandCard(
+                    card,
+                    playerHandCenter
+                );
+
+            if (visual == null)
+                break;
+
+            playerHand.Add(card);
+
+            playerVisualCards.Add(
+                visual
+            );
+
+            RefreshAllHands();
+
+            Vector3 finalPosition =
+                visual.transform.position;
+
+            Quaternion finalRotation =
+                visual.transform.rotation;
+
+            visual.transform.SetParent(
+                null,
+                true
+            );
+
+            visual.SetAnimationLocked(true);
+
+            Vector3 startPosition =
+                drawPilePosition.position;
+
+            startPosition.y += 0.15f;
+
+            visual.transform.position =
+                startPosition;
+
+            visual.transform.rotation =
+                drawPilePosition.rotation;
+
+            visual.SetCardBackVisible(true);
+
+            yield return AnimateDrawCard(
+                visual,
+                startPosition,
+                drawPilePosition.rotation,
+                finalPosition,
+                finalRotation
+            );
+
+            visual.transform.SetParent(
+                playerHandCenter,
+                true
+            );
+
+            visual.transform.position =
+                finalPosition;
+
+            visual.transform.rotation =
+                finalRotation;
+
+            visual.SetCardBackVisible(false);
+
+            visual.SetAnimationLocked(false);
+
+            visual.CaptureCurrentTransformAsNormal();
+
+            yield return new WaitForSeconds(
+                0.03f
+            );
+        }
+
+        playerDrawCount = 0;
+
+        playerDrewPlayableCardThisTurn =
+            false;
+
+        RefreshAllHands();
+
+        GoToNextPlayer();
     }
 
     // ============================================================
@@ -767,13 +1236,13 @@ public class GameManager : MonoBehaviour
                     t
                 );
 
-            // Reveal the front halfway through.
             if (raw >= 0.5f)
             {
                 card.SetCardBackVisible(false);
             }
 
-            timer += Time.deltaTime;
+            timer +=
+                Time.deltaTime;
 
             yield return null;
         }
@@ -837,7 +1306,6 @@ public class GameManager : MonoBehaviour
                     t
                 );
 
-            // Small dramatic spin.
             rotation *=
                 Quaternion.Euler(
                     0f,
@@ -848,7 +1316,8 @@ public class GameManager : MonoBehaviour
             card.transform.rotation =
                 rotation;
 
-            timer += Time.deltaTime;
+            timer +=
+                Time.deltaTime;
 
             yield return null;
         }
@@ -861,7 +1330,77 @@ public class GameManager : MonoBehaviour
     }
 
     // ============================================================
-    // PLAYABLE CHECK
+    // CAN PLAY CARD NOW
+    // ============================================================
+
+    public bool CanPlayCardNow(
+        CardData card)
+    {
+        if (card == null)
+            return false;
+
+        // --------------------------------------------------------
+        // Draw stacking
+        // --------------------------------------------------------
+
+        if (pendingDrawAmount > 0)
+        {
+            if (pendingDrawType ==
+                CardType.Draw2)
+            {
+                return card.type ==
+                           CardType.Draw2 ||
+                       card.type ==
+                           CardType.Draw4;
+            }
+
+            if (pendingDrawType ==
+                CardType.Draw4)
+            {
+                return card.type ==
+                       CardType.Draw4;
+            }
+
+            return false;
+        }
+
+        // --------------------------------------------------------
+        // All specials are jokers.
+        // --------------------------------------------------------
+
+        if (card.type != CardType.Number)
+            return true;
+
+        if (currentTopCard == null)
+            return true;
+
+        // --------------------------------------------------------
+        // Color match
+        // --------------------------------------------------------
+
+        if (activeColor != CardColor.Wild &&
+            card.color == activeColor)
+        {
+            return true;
+        }
+
+        // --------------------------------------------------------
+        // Number match
+        // --------------------------------------------------------
+
+        if (currentTopCard.type ==
+                CardType.Number &&
+            card.number ==
+                currentTopCard.number)
+        {
+            return true;
+        }
+
+        return false;
+    }
+
+    // ============================================================
+    // PLAYABLE CARD CHECK
     // ============================================================
 
     private bool HasPlayableCard(
@@ -872,69 +1411,1056 @@ public class GameManager : MonoBehaviour
 
         foreach (CardData card in hand)
         {
-            if (card != null &&
-                card.CanPlay(currentTopCard))
-            {
+            if (CanPlayCardNow(card))
                 return true;
-            }
         }
 
         return false;
     }
 
     // ============================================================
-    // CARD RESOLUTION
+    // RESOLVE PLAYED CARD
     // ============================================================
 
-    private void ResolvePlayedCard(
+    private IEnumerator ResolvePlayedCardAfterAnimation(
         CardData card,
         int playedByPlayerIndex)
     {
-        // Specials are still using the temporary
-        // Joker behavior for now.
-        //
-        // We will replace this with:
-        //
-        // +2 animation
-        // +4 animation
-        // Reverse animation
-        // Skip animation
-        // Color Change animation
-        // Challenge system
-        //
-        // once the normal card loop is working.
+        if (card == null)
+        {
+            state =
+                GameState.Playing;
+
+            GoToNextPlayerFrom(
+                playedByPlayerIndex
+            );
+
+            yield break;
+        }
+
+        // --------------------------------------------------------
+        // NORMAL NUMBER CARD
+        // --------------------------------------------------------
+
+        if (card.type ==
+            CardType.Number)
+        {
+            activeColor =
+                card.color;
+
+            ShowSpecialEffect(
+                "PLAYED " +
+                FormatCardColor(card.color).ToUpperInvariant() +
+                " " +
+                card.number +
+                "!"
+            );
+
+            pendingSpecialCard =
+                null;
+
+            pendingSpecialPlayerIndex =
+                -1;
+
+            yield return null;
+
+            GoToNextPlayerFrom(
+                playedByPlayerIndex
+            );
+
+            yield break;
+        }
+
+        // --------------------------------------------------------
+        // WILD COLOR SELECTION
+        // --------------------------------------------------------
+
+        if (card.type ==
+            CardType.ColorChange)
+        {
+            if (playedByPlayerIndex == 0)
+            {
+                waitingForWildColor = true;
+
+                state =
+                    GameState.WaitingForWildColor;
+
+                if (ChallengePanel.Instance != null)
+                {
+                    ChallengePanel.Instance
+                        .ShowWildColorSelection();
+                }
+                else
+                {
+                    card.SetChosenColor(
+                        CardColor.Purple
+                    );
+
+                    waitingForWildColor = false;
+
+                    PrepareSpecialChallenge(
+                        card,
+                        playedByPlayerIndex
+                    );
+                }
+
+                yield break;
+            }
+
+            // AI chooses a color.
+            List<CardData> aiHand =
+                GetAIHand(
+                    playedByPlayerIndex
+                );
+
+            CardColor aiColor =
+                ChooseAIWildColor(
+                    aiHand
+                );
+
+            card.SetChosenColor(
+                aiColor
+            );
+        }
+
+        // --------------------------------------------------------
+        // Every special creates a challenge opportunity.
+        // --------------------------------------------------------
+
+        PrepareSpecialChallenge(
+            card,
+            playedByPlayerIndex
+        );
+
+        yield break;
+    }
+
+    // ============================================================
+    // PLAYER SELECTED WILD COLOR
+    // ============================================================
+
+    public void PlayerSelectedWildColor(
+        CardColor color)
+    {
+        if (state !=
+            GameState.WaitingForWildColor)
+        {
+            return;
+        }
+
+        if (!waitingForWildColor)
+            return;
+
+        if (pendingSpecialCard != null)
+            return;
+
+        // Find the ColorChange card from the discard.
+        CardData wildCard =
+            currentTopCard;
+
+        if (wildCard == null ||
+            wildCard.type !=
+                CardType.ColorChange)
+        {
+            return;
+        }
+
+        wildCard.SetChosenColor(
+            color
+        );
+
+        activeColor =
+            color;
+
+        ShowSpecialEffect(
+            "COLOR CHANGED TO " +
+            FormatCardColor(color).ToUpperInvariant() +
+            "!"
+        );
+
+        waitingForWildColor =
+            false;
+
+        PrepareSpecialChallenge(
+            wildCard,
+            0
+        );
+    }
+
+    // ============================================================
+    // PREPARE SPECIAL CHALLENGE
+    // ============================================================
+
+    private void PrepareSpecialChallenge(
+        CardData card,
+        int playedByPlayerIndex)
+    {
+        pendingSpecialCard =
+            card;
+
+        pendingSpecialPlayerIndex =
+            playedByPlayerIndex;
+
+        // --------------------------------------------------------
+        // Add to draw stack.
+        // --------------------------------------------------------
+
+        if (card.type ==
+            CardType.Draw2)
+        {
+            pendingDrawAmount += 2;
+
+            pendingDrawType =
+                CardType.Draw2;
+        }
+        else if (card.type ==
+                 CardType.Draw4)
+        {
+            pendingDrawAmount += 4;
+
+            pendingDrawType =
+                CardType.Draw4;
+        }
+
+        ShowSpecialEffect(
+            GetSpecialEffectText(card)
+        );
+
+        // --------------------------------------------------------
+        // The player after the person who played the card
+        // becomes the challenger.
+        // --------------------------------------------------------
+
+        currentPlayerIndex =
+            GetNextPlayerIndex(
+                playedByPlayerIndex
+            );
 
         state =
-            GameState.Playing;
+            GameState.WaitingForChallenge;
+
+        UpdateTurnUI();
+
+        OpenChallengeForCurrentPlayer();
+    }
+
+    // ============================================================
+    // OPEN CHALLENGE
+    // ============================================================
+
+    private void OpenChallengeForCurrentPlayer()
+    {
+        if (currentPlayerIndex == 0)
+        {
+            // ----------------------------------------------------
+            // HUMAN
+            // ----------------------------------------------------
+
+            if (ChallengePanel.Instance != null)
+            {
+                ChallengePanel.Instance
+                    .ShowChallenge(
+                        pendingSpecialCard,
+                        pendingDrawAmount
+                    );
+            }
+            else
+            {
+                Debug.LogWarning(
+                    "ChallengePanel is missing. " +
+                    "Automatically continuing."
+                );
+
+                DeclinePlayerChallenge();
+            }
+
+            return;
+        }
+
+        // --------------------------------------------------------
+        // AI
+        // --------------------------------------------------------
+
+        StartCoroutine(
+            HandleAIChallengeDecision()
+        );
+    }
+
+    // ============================================================
+    // PLAYER ACCEPTS CHALLENGE
+    // ============================================================
+
+    public void AcceptPlayerChallenge()
+    {
+        if (state !=
+            GameState.WaitingForChallenge)
+        {
+            return;
+        }
+
+        if (!PlayerTurn)
+            return;
+
+        BeginChallenge(
+            true
+        );
+    }
+
+    // ============================================================
+    // PLAYER DECLINES CHALLENGE
+    // ============================================================
+
+    public void DeclinePlayerChallenge()
+    {
+        if (state !=
+            GameState.WaitingForChallenge)
+        {
+            return;
+        }
+
+        if (!PlayerTurn)
+            return;
+
+        HideChallengePanel();
+
+        // --------------------------------------------------------
+        // Draw card stack:
+        //
+        // Player now gets the choice:
+        // stack another +2/+4 OR draw penalty.
+        // --------------------------------------------------------
+
+        if (pendingDrawAmount > 0)
+        {
+            state =
+                GameState.Playing;
+
+            UpdateTurnUI();
+
+            return;
+        }
+
+        // --------------------------------------------------------
+        // Other specials immediately resolve.
+        // --------------------------------------------------------
+
+        ResolveAcceptedSpecial();
+    }
+
+    // ============================================================
+    // AI CHALLENGE DECISION
+    // ============================================================
+
+    private IEnumerator HandleAIChallengeDecision()
+    {
+        yield return new WaitForSeconds(
+            aiThinkingTime
+        );
+
+        if (state !=
+            GameState.WaitingForChallenge)
+        {
+            yield break;
+        }
+
+        AIOpponent opponent =
+            GetAI(
+                currentPlayerIndex
+            );
+
+        if (opponent == null)
+        {
+            ResolveAcceptedSpecial();
+
+            yield break;
+        }
+
+        int difficulty = 1;
+
+        if (MinigameManager.Instance != null)
+        {
+            difficulty =
+                MinigameManager.Instance
+                    .GetCurrentDifficulty(currentPlayerIndex);
+        }
+
+        bool challenge =
+            opponent.ShouldChallenge(
+                difficulty
+            );
+
+        // --------------------------------------------------------
+        // AI CHALLENGES
+        // --------------------------------------------------------
+
+        if (challenge)
+        {
+            BeginChallenge(
+                false
+            );
+
+            yield break;
+        }
+
+        // --------------------------------------------------------
+        // AI DOES NOT CHALLENGE
+        // --------------------------------------------------------
+
+        if (pendingDrawAmount > 0)
+        {
+            List<CardData> hand =
+                GetAIHand(
+                    currentPlayerIndex
+                );
+
+            CardData response =
+                opponent.ChooseCard(
+                    hand,
+                    currentTopCard,
+                    activeColor,
+                    pendingDrawAmount,
+                    pendingDrawType
+                );
+
+            if (response != null)
+            {
+                state =
+                    GameState.Playing;
+
+                yield return new WaitForSeconds(
+                    0.08f
+                );
+
+                yield return
+                    PlayAICardGroupRoutine(
+                        currentPlayerIndex,
+                        response
+                    );
+
+                yield break;
+            }
+
+            // No stack card.
+            yield return
+                AITakePenaltyRoutine();
+
+            yield break;
+        }
+
+        // Skip / Reverse / Wild.
+        ResolveAcceptedSpecial();
+    }
+
+    // ============================================================
+    // BEGIN CHALLENGE
+    // ============================================================
+
+    private void BeginChallenge(
+        bool playerIsChallenger)
+    {
+        int difficulty = 1;
+
+        if (MinigameManager.Instance != null)
+        {
+            difficulty =
+                MinigameManager.Instance
+                    .GetCurrentDifficulty(currentPlayerIndex);
+        }
+
+        if (MinigameManager.Instance == null)
+        {
+            Debug.LogError(
+                "MinigameManager is missing."
+            );
+
+            return;
+        }
+
+        // The player/AI has actually committed to the challenge here.
+        // Increase only that challenger's personal progression.
+        MinigameManager.Instance.RegisterChallenge(
+            currentPlayerIndex
+        );
+
+        difficulty =
+            MinigameManager.Instance
+                .GetCurrentDifficulty(currentPlayerIndex);
+
+        state =
+            GameState.CameraTransition;
+
+        CardColor challengeColor =
+            GetChallengeColorForPendingCard();
+
+        MinigameManager.Instance
+            .StartChallenge(
+                challengeColor,
+                playerIsChallenger
+            );
+    }
+
+    // ============================================================
+    // AI CHALLENGE RESULT DIRECT
+    // ============================================================
+
+    private void BeginChallenge(
+        bool playerIsChallenger,
+        bool challengerWon)
+    {
+        if (playerIsChallenger)
+        {
+            BeginChallenge(
+                true
+            );
+
+            return;
+        }
+
+        if (MinigameManager.Instance != null)
+        {
+            MinigameManager.Instance
+                .CompleteAIChallenge(
+                    challengerWon
+                );
+        }
+        else
+        {
+            ChallengeFinished(
+                challengerWon
+            );
+        }
+    }
+
+    // ============================================================
+    // GET CHALLENGE COLOR
+    // ============================================================
+
+    private CardColor GetChallengeColorForPendingCard()
+    {
+        if (pendingSpecialCard == null)
+            return CardColor.Purple;
+
+        if (pendingSpecialCard.type ==
+            CardType.ColorChange)
+        {
+            if (pendingSpecialCard.chosenColor !=
+                CardColor.Wild)
+            {
+                return pendingSpecialCard
+                    .chosenColor;
+            }
+        }
+
+        if (pendingSpecialCard.color ==
+            CardColor.Wild)
+        {
+            return CardColor.Purple;
+        }
+
+        return pendingSpecialCard.color;
+    }
+
+    // ============================================================
+    // CHALLENGE FINISHED
+    // ============================================================
+
+    public void ChallengeFinished(
+        bool challengerWon)
+    {
+        if (pendingSpecialCard == null)
+        {
+            state =
+                GameState.Playing;
+
+            GoToNextPlayer();
+
+            return;
+        }
+
+        state =
+            GameState.ResolvingChallenge;
+
+        HideChallengePanel();
+
+        StartCoroutine(
+            FinishChallengeRoutine(
+                challengerWon
+            )
+        );
+    }
+
+    // ============================================================
+    // FINISH CHALLENGE
+    // ============================================================
+
+    private IEnumerator FinishChallengeRoutine(
+        bool challengerWon)
+    {
+        yield return new WaitForSeconds(
+            0.15f
+        );
+
+        if (challengerWon)
+        {
+            ResolveSuccessfulChallenge();
+        }
+        else
+        {
+            ResolveFailedChallenge();
+        }
+    }
+
+    // ============================================================
+    // SUCCESSFUL CHALLENGE
+    // ============================================================
+
+    private void ResolveSuccessfulChallenge()
+    {
+        Debug.Log(
+            "CHALLENGE WON - SPECIAL EFFECT CANCELLED."
+        );
+
+        ShowSpecialEffect(
+            "CHALLENGE WON! SPECIAL CANCELLED!"
+        );
+
+        // Entire draw stack is cancelled.
+        pendingDrawAmount = 0;
+
+        pendingDrawType =
+            CardType.Number;
+
+        UpdateGameplayUI();
+
+        // Color Change is cancelled too.
+        // activeColor remains whatever it was before.
+        pendingSpecialCard =
+            null;
+
+        pendingSpecialPlayerIndex =
+            -1;
+
+        waitingForWildColor =
+            false;
+
+        // Challenger used their turn challenging,
+        // so move to the next player.
+        GoToNextPlayerFrom(
+            currentPlayerIndex
+        );
+    }
+
+    // ============================================================
+    // FAILED CHALLENGE
+    // ============================================================
+
+    private void ResolveFailedChallenge()
+    {
+        CardData card =
+            pendingSpecialCard;
+
+        Debug.Log(
+            "CHALLENGE FAILED."
+        );
+
+        ShowSpecialEffect(
+            "CHALLENGE FAILED!"
+        );
+
+        // --------------------------------------------------------
+        // +2 / +4
+        //
+        // Entire accumulated penalty doubles.
+        // --------------------------------------------------------
+
+        if (card.type ==
+                CardType.Draw2 ||
+            card.type ==
+                CardType.Draw4)
+        {
+            pendingDrawAmount *= 2;
+
+            if (pendingDrawAmount <= 0)
+                pendingDrawAmount =
+                    card.GetDrawValue();
+
+            Debug.Log(
+                "Failed challenge. " +
+                "New penalty = +" +
+                pendingDrawAmount
+            );
+
+            ShowSpecialEffect(
+                "PENALTY DOUBLED TO +" +
+                pendingDrawAmount +
+                "!"
+            );
+
+            UpdateGameplayUI();
+
+            StartCoroutine(
+                ApplyFailedDrawPenalty()
+            );
+
+            return;
+        }
+
+        // --------------------------------------------------------
+        // SKIP
+        //
+        // Normal skip = 1 turn.
+        // Failed challenge = 2 turns.
+        // --------------------------------------------------------
+
+        if (card.type ==
+            CardType.Skip)
+        {
+            ShowSpecialEffect(
+                "SKIP!"
+            );
+
+            pendingSpecialCard =
+                null;
+
+            pendingSpecialPlayerIndex =
+                -1;
+
+            AdvanceTurnsFromCurrent(
+                2
+            );
+
+            return;
+        }
+
+        // --------------------------------------------------------
+        // REVERSE
+        //
+        // Reverse still happens.
+        // Challenger then loses one turn.
+        // --------------------------------------------------------
+
+        if (card.type ==
+            CardType.Reverse)
+        {
+            turnDirection *= -1;
+
+            ShowSpecialEffect(
+                "REVERSE!"
+            );
+
+            pendingSpecialCard =
+                null;
+
+            pendingSpecialPlayerIndex =
+                -1;
+
+            AdvanceTurnsFromCurrent(
+                1
+            );
+
+            return;
+        }
+
+        // --------------------------------------------------------
+        // WILD / COLOR CHANGE
+        //
+        // Selected color applies.
+        // Challenger loses one turn.
+        // --------------------------------------------------------
+
+        if (card.type ==
+            CardType.ColorChange)
+        {
+            if (card.chosenColor !=
+                CardColor.Wild)
+            {
+                activeColor =
+                    card.chosenColor;
+
+                ShowSpecialEffect(
+                    "COLOR CHANGED TO " +
+                    FormatCardColor(card.chosenColor).ToUpperInvariant() +
+                    "!"
+                );
+            }
+
+            pendingSpecialCard =
+                null;
+
+            pendingSpecialPlayerIndex =
+                -1;
+
+            AdvanceTurnsFromCurrent(
+                1
+            );
+
+            return;
+        }
+
+        pendingSpecialCard =
+            null;
+
+        pendingSpecialPlayerIndex =
+            -1;
 
         GoToNextPlayer();
     }
 
     // ============================================================
-    // TURN SYSTEM
+    // FAILED DRAW PENALTY
     // ============================================================
 
-    private void GoToNextPlayer()
+    private IEnumerator ApplyFailedDrawPenalty()
     {
-        currentPlayerIndex =
-            (currentPlayerIndex + 1) % 4;
-
-        if (currentPlayerIndex == 0)
-        {
-            playerDrawCount = 0;
-        }
-
         state =
-            GameState.Playing;
+            GameState.ResolvingChallenge;
 
-        UpdateTurnUI();
+        int amount =
+            pendingDrawAmount;
 
-        if (currentPlayerIndex != 0)
+        pendingDrawAmount = 0;
+
+        pendingDrawType =
+            CardType.Number;
+
+        UpdateGameplayUI();
+
+        // --------------------------------------------------------
+        // Challenger draws the doubled penalty.
+        // --------------------------------------------------------
+
+        List<CardData> hand =
+            GetHand(
+                currentPlayerIndex
+            );
+
+        List<Card3D> visuals =
+            GetVisuals(
+                currentPlayerIndex
+            );
+
+        Transform center =
+            GetHandCenter(
+                currentPlayerIndex
+            );
+
+        bool isPlayer =
+            currentPlayerIndex == 0;
+
+        for (int i = 0;
+             i < amount;
+             i++)
         {
-            StartCoroutine(
-                RunAITurn()
+            CardData drawn =
+                DrawFromDeck();
+
+            if (drawn == null)
+                break;
+
+            if (hand == null)
+                break;
+
+            hand.Add(drawn);
+
+            Card3D visual =
+                SpawnHandCard(
+                    drawn,
+                    center
+                );
+
+            if (visual == null)
+                continue;
+
+            visuals.Add(
+                visual
+            );
+
+            RefreshAllHands();
+
+            Vector3 finalPosition =
+                visual.transform.position;
+
+            Quaternion finalRotation =
+                visual.transform.rotation;
+
+            visual.transform.SetParent(
+                null,
+                true
+            );
+
+            visual.SetAnimationLocked(true);
+
+            Vector3 startPosition =
+                drawPilePosition.position;
+
+            startPosition.y += 0.15f;
+
+            visual.transform.position =
+                startPosition;
+
+            visual.transform.rotation =
+                drawPilePosition.rotation;
+
+            visual.SetCardBackVisible(
+                !isPlayer
+            );
+
+            yield return AnimateDrawCard(
+                visual,
+                startPosition,
+                drawPilePosition.rotation,
+                finalPosition,
+                finalRotation
+            );
+
+            visual.transform.SetParent(
+                center,
+                true
+            );
+
+            visual.transform.position =
+                finalPosition;
+
+            visual.transform.rotation =
+                finalRotation;
+
+            visual.SetCardBackVisible(
+                !isPlayer
+            );
+
+            visual.SetAnimationLocked(false);
+
+            visual.CaptureCurrentTransformAsNormal();
+
+            yield return new WaitForSeconds(
+                0.025f
             );
         }
+
+        pendingSpecialCard =
+            null;
+
+        pendingSpecialPlayerIndex =
+            -1;
+
+        RefreshAllHands();
+
+        // Challenger has consumed their turn.
+        AdvanceTurnsFromCurrent(
+            1
+        );
+    }
+
+    // ============================================================
+    // ACCEPT SPECIAL WITHOUT CHALLENGING
+    // ============================================================
+
+    private void ResolveAcceptedSpecial()
+    {
+        if (pendingSpecialCard == null)
+        {
+            GoToNextPlayer();
+
+            return;
+        }
+
+        CardData card =
+            pendingSpecialCard;
+
+        HideChallengePanel();
+
+        // --------------------------------------------------------
+        // DRAW CARDS
+        //
+        // Do NOT resolve immediately.
+        // The current player may stack another +2/+4.
+        // --------------------------------------------------------
+
+        if (card.type ==
+                CardType.Draw2 ||
+            card.type ==
+                CardType.Draw4)
+        {
+            state =
+                GameState.Playing;
+
+            UpdateTurnUI();
+
+            return;
+        }
+
+        // --------------------------------------------------------
+        // SKIP
+        // --------------------------------------------------------
+
+        if (card.type ==
+            CardType.Skip)
+        {
+            pendingSpecialCard =
+                null;
+
+            pendingSpecialPlayerIndex =
+                -1;
+
+            AdvanceTurnsFromCurrent(
+                2
+            );
+
+            return;
+        }
+
+        // --------------------------------------------------------
+        // REVERSE
+        // --------------------------------------------------------
+
+        if (card.type ==
+            CardType.Reverse)
+        {
+            turnDirection *= -1;
+
+            pendingSpecialCard =
+                null;
+
+            pendingSpecialPlayerIndex =
+                -1;
+
+            GoToNextPlayer();
+
+            return;
+        }
+
+        // --------------------------------------------------------
+        // COLOR CHANGE
+        // --------------------------------------------------------
+
+        if (card.type ==
+            CardType.ColorChange)
+        {
+            if (card.chosenColor !=
+                CardColor.Wild)
+            {
+                activeColor =
+                    card.chosenColor;
+            }
+
+            pendingSpecialCard =
+                null;
+
+            pendingSpecialPlayerIndex =
+                -1;
+
+            GoToNextPlayer();
+
+            return;
+        }
+
+        pendingSpecialCard =
+            null;
+
+        pendingSpecialPlayerIndex =
+            -1;
+
+        GoToNextPlayer();
     }
 
     // ============================================================
@@ -960,41 +2486,27 @@ public class GameManager : MonoBehaviour
                 currentPlayerIndex
             );
 
-        Transform handCenter =
-            GetAIHandCenter(
-                currentPlayerIndex
-            );
-
-        List<Card3D> visuals =
-            GetAIVisuals(
-                currentPlayerIndex
-            );
-
         if (opponent == null ||
-            hand == null ||
-            handCenter == null ||
-            visuals == null)
+            hand == null)
         {
-            Debug.LogError(
-                "AI setup is incomplete."
-            );
-
             GoToNextPlayer();
 
             yield break;
         }
 
-        // Try an existing playable card.
         CardData chosen =
             opponent.ChooseCard(
                 hand,
-                currentTopCard
+                currentTopCard,
+                activeColor,
+                pendingDrawAmount,
+                pendingDrawType
             );
 
         if (chosen != null)
         {
             yield return
-                PlayAICardRoutine(
+                PlayAICardGroupRoutine(
                     currentPlayerIndex,
                     chosen
                 );
@@ -1002,7 +2514,25 @@ public class GameManager : MonoBehaviour
             yield break;
         }
 
-        // AI gets up to 3 draws.
+        // --------------------------------------------------------
+        // If a draw stack is active, AI must take it.
+        // --------------------------------------------------------
+
+        if (pendingDrawAmount > 0)
+        {
+            yield return
+                AITakePenaltyRoutine();
+
+            yield break;
+        }
+
+        // --------------------------------------------------------
+        // Normal AI draw up to 3 times.
+        // --------------------------------------------------------
+
+        bool aiFoundPlayable =
+            false;
+
         for (int draw = 0;
              draw < maximumPlayerDraws;
              draw++)
@@ -1013,12 +2543,32 @@ public class GameManager : MonoBehaviour
             if (drawn == null)
                 break;
 
-            hand.Add(drawn);
+            bool playable =
+                CanPlayCardNow(
+                    drawn
+                );
+
+            if (playable)
+                aiFoundPlayable = true;
+
+            hand.Add(
+                drawn
+            );
+
+            List<Card3D> visuals =
+                GetAIVisuals(
+                    currentPlayerIndex
+                );
+
+            Transform center =
+                GetAIHandCenter(
+                    currentPlayerIndex
+                );
 
             Card3D visual =
                 SpawnHandCard(
                     drawn,
-                    handCenter
+                    center
                 );
 
             if (visual != null)
@@ -1045,8 +2595,7 @@ public class GameManager : MonoBehaviour
                 Vector3 startPosition =
                     drawPilePosition.position;
 
-                startPosition.y +=
-                    0.15f;
+                startPosition.y += 0.15f;
 
                 visual.transform.position =
                     startPosition;
@@ -1054,22 +2603,20 @@ public class GameManager : MonoBehaviour
                 visual.transform.rotation =
                     drawPilePosition.rotation;
 
-                // AI keeps card face down.
                 visual.SetCardBackVisible(
                     true
                 );
 
-                yield return
-                    AnimateDrawCard(
-                        visual,
-                        startPosition,
-                        drawPilePosition.rotation,
-                        finalPosition,
-                        finalRotation
-                    );
+                yield return AnimateDrawCard(
+                    visual,
+                    startPosition,
+                    drawPilePosition.rotation,
+                    finalPosition,
+                    finalRotation
+                );
 
                 visual.transform.SetParent(
-                    handCenter,
+                    center,
                     true
                 );
 
@@ -1092,150 +2639,440 @@ public class GameManager : MonoBehaviour
                 RefreshAllHands();
             }
 
-            // See if AI can now play.
-            chosen =
+            CardData afterDraw =
                 opponent.ChooseCard(
                     hand,
-                    currentTopCard
+                    currentTopCard,
+                    activeColor,
+                    pendingDrawAmount,
+                    pendingDrawType
                 );
 
-            if (chosen != null)
+            if (afterDraw != null)
             {
                 yield return
-                    new WaitForSeconds(
-                        0.08f
-                    );
-
-                yield return
-                    PlayAICardRoutine(
+                    PlayAICardGroupRoutine(
                         currentPlayerIndex,
-                        chosen
+                        afterDraw
                     );
 
                 yield break;
             }
+
+            if (aiFoundPlayable)
+            {
+                // Keep drawing until AI has used
+                // its normal turn decisions.
+                continue;
+            }
         }
 
-        // No playable card after 3 draws.
         GoToNextPlayer();
     }
 
     // ============================================================
-    // AI PLAY
+    // AI TAKES PENALTY
     // ============================================================
 
-    private IEnumerator PlayAICardRoutine(
-        int playerIndex,
-        CardData card)
+    private IEnumerator AITakePenaltyRoutine()
     {
         state =
             GameState.ResolvingChallenge;
 
+        int amount =
+            pendingDrawAmount;
+
+        pendingDrawAmount = 0;
+
+        pendingDrawType =
+            CardType.Number;
+
+        UpdateGameplayUI();
+
         List<CardData> hand =
-            GetAIHand(playerIndex);
-
-        List<Card3D> visuals =
-            GetAIVisuals(playerIndex);
-
-        if (hand == null ||
-            visuals == null)
-        {
-            GoToNextPlayer();
-
-            yield break;
-        }
-
-        hand.Remove(card);
-
-        Card3D visual =
-            FindVisualForCard(
-                visuals,
-                card
+            GetAIHand(
+                currentPlayerIndex
             );
 
-        if (visual == null)
+        List<Card3D> visuals =
+            GetAIVisuals(
+                currentPlayerIndex
+            );
+
+        Transform center =
+            GetAIHandCenter(
+                currentPlayerIndex
+            );
+
+        for (int i = 0;
+             i < amount;
+             i++)
         {
-            GoToNextPlayer();
+            CardData drawn =
+                DrawFromDeck();
 
-            yield break;
+            if (drawn == null)
+                break;
+
+            hand.Add(
+                drawn
+            );
+
+            Card3D visual =
+                SpawnHandCard(
+                    drawn,
+                    center
+                );
+
+            if (visual != null)
+            {
+                visuals.Add(
+                    visual
+                );
+
+                RefreshAllHands();
+
+                Vector3 finalPosition =
+                    visual.transform.position;
+
+                Quaternion finalRotation =
+                    visual.transform.rotation;
+
+                visual.transform.SetParent(
+                    null,
+                    true
+                );
+
+                visual.SetAnimationLocked(
+                    true
+                );
+
+                Vector3 startPosition =
+                    drawPilePosition.position;
+
+                startPosition.y +=
+                    0.15f;
+
+                visual.transform.position =
+                    startPosition;
+
+                visual.transform.rotation =
+                    drawPilePosition.rotation;
+
+                visual.SetCardBackVisible(
+                    true
+                );
+
+                yield return AnimateDrawCard(
+                    visual,
+                    startPosition,
+                    drawPilePosition.rotation,
+                    finalPosition,
+                    finalRotation
+                );
+
+                visual.transform.SetParent(
+                    center,
+                    true
+                );
+
+                visual.transform.position =
+                    finalPosition;
+
+                visual.transform.rotation =
+                    finalRotation;
+
+                visual.SetCardBackVisible(
+                    true
+                );
+
+                visual.SetAnimationLocked(
+                    false
+                );
+
+                visual.CaptureCurrentTransformAsNormal();
+            }
         }
-
-        visuals.Remove(
-            visual
-        );
-
-        visual.SetHovered(false);
-        visual.SetAnimationLocked(true);
-
-        // Reveal it only for the play animation.
-        visual.SetCardBackVisible(false);
 
         RefreshAllHands();
 
-        if (currentDiscardVisual != null)
-        {
-            Destroy(
-                currentDiscardVisual.gameObject
+        pendingSpecialCard =
+            null;
+
+        pendingSpecialPlayerIndex =
+            -1;
+
+        GoToNextPlayer();
+    }
+
+    // ============================================================
+    // AI PLAY GROUP
+    // ============================================================
+
+    private IEnumerator PlayAICardGroupRoutine(
+        int playerIndex,
+        CardData chosen)
+    {
+        List<CardData> hand =
+            GetAIHand(
+                playerIndex
             );
 
-            currentDiscardVisual = null;
+        List<Card3D> visuals =
+            GetAIVisuals(
+                playerIndex
+            );
+
+        if (hand == null ||
+            visuals == null ||
+            chosen == null)
+        {
+            GoToNextPlayer();
+
+            yield break;
         }
 
-        Vector3 startPosition =
-            visual.transform.position;
-
-        Quaternion startRotation =
-            visual.transform.rotation;
-
-        visual.transform.SetParent(
-            null,
-            true
-        );
-
-        yield return
-            AnimatePlayCard(
-                visual,
-                startPosition,
-                startRotation,
-                discardPilePosition.position,
-                discardPilePosition.rotation
+        List<CardData> cards =
+            BuildAIPlayGroup(
+                hand,
+                chosen
             );
 
-        visual.transform.SetParent(
-            discardPilePosition,
-            true
-        );
+        state =
+            GameState.ResolvingChallenge;
 
-        visual.transform.position =
-            discardPilePosition.position;
+        List<Card3D> cardsVisuals =
+            new List<Card3D>();
 
-        visual.transform.rotation =
-            discardPilePosition.rotation;
+        foreach (CardData card in cards)
+        {
+            Card3D visual =
+                FindVisualForCard(
+                    visuals,
+                    card
+                );
 
-        visual.transform.localScale =
-            Vector3.one;
+            if (visual != null)
+                cardsVisuals.Add(
+                    visual
+                );
+        }
 
-        visual.SetAnimationLocked(false);
-        visual.CaptureCurrentTransformAsNormal();
+        foreach (CardData card in cards)
+            hand.Remove(card);
 
-        DisableCardColliders(
-            visual.gameObject
-        );
+        foreach (Card3D visual in cardsVisuals)
+            visuals.Remove(visual);
 
-        currentDiscardVisual =
-            visual;
+        // AI wild selection.
+        if (chosen.type ==
+            CardType.ColorChange)
+        {
+            chosen.SetChosenColor(
+                ChooseAIWildColor(hand)
+            );
+        }
+
+        RefreshAllHands();
+
+        ClearDiscardVisuals();
+
+        for (int i = 0;
+             i < cardsVisuals.Count;
+             i++)
+        {
+            Card3D visual =
+                cardsVisuals[i];
+
+            if (visual == null)
+                continue;
+
+            visual.SetHovered(false);
+
+            visual.SetAnimationLocked(
+                true
+            );
+
+            visual.SetCardBackVisible(
+                false
+            );
+
+            Vector3 startPosition =
+                visual.transform.position;
+
+            Quaternion startRotation =
+                visual.transform.rotation;
+
+            visual.transform.SetParent(
+                null,
+                true
+            );
+
+            Vector3 targetPosition =
+                discardPilePosition.position;
+
+            targetPosition +=
+                Vector3.up *
+                (i * 0.012f);
+
+            yield return
+                AnimatePlayCard(
+                    visual,
+                    startPosition,
+                    startRotation,
+                    targetPosition,
+                    discardPilePosition.rotation
+                );
+
+            visual.transform.SetParent(
+                discardPilePosition,
+                true
+            );
+
+            visual.transform.position =
+                targetPosition;
+
+            visual.transform.rotation =
+                discardPilePosition.rotation;
+
+            visual.transform.localScale =
+                Vector3.one;
+
+            visual.SetAnimationLocked(
+                false
+            );
+
+            visual.CaptureCurrentTransformAsNormal();
+
+            DisableCardColliders(
+                visual.gameObject
+            );
+
+            currentDiscardVisual =
+                visual;
+        }
 
         currentTopCard =
-            card;
+            cards[cards.Count - 1];
 
-        ResolvePlayedCard(
-            card,
-            playerIndex
+        yield return StartCoroutine(
+            ResolvePlayedCardAfterAnimation(
+                currentTopCard,
+                playerIndex
+            )
         );
     }
 
     // ============================================================
-    // FIND AI VISUAL
+    // AI GROUP
+    // ============================================================
+
+    private List<CardData> BuildAIPlayGroup(
+        List<CardData> hand,
+        CardData chosen)
+    {
+        List<CardData> group =
+            new List<CardData>();
+
+        if (chosen == null)
+            return group;
+
+        if (chosen.type !=
+            CardType.Number)
+        {
+            group.Add(chosen);
+
+            return group;
+        }
+
+        foreach (CardData card in hand)
+        {
+            if (card == null)
+                continue;
+
+            if (card.type !=
+                CardType.Number)
+                continue;
+
+            if (card.number ==
+                chosen.number)
+            {
+                group.Add(card);
+            }
+        }
+
+        if (group.Count == 0)
+            group.Add(chosen);
+
+        return group;
+    }
+
+    // ============================================================
+    // AI WILD COLOR
+    // ============================================================
+
+    private CardColor ChooseAIWildColor(
+        List<CardData> hand)
+    {
+        int purple = 0;
+        int green = 0;
+        int yellow = 0;
+        int red = 0;
+
+        if (hand != null)
+        {
+            foreach (CardData card in hand)
+            {
+                if (card == null)
+                    continue;
+
+                if (card.type !=
+                    CardType.Number)
+                    continue;
+
+                switch (card.color)
+                {
+                    case CardColor.Purple:
+                        purple++;
+                        break;
+
+                    case CardColor.Green:
+                        green++;
+                        break;
+
+                    case CardColor.Yellow:
+                        yellow++;
+                        break;
+
+                    case CardColor.Red:
+                        red++;
+                        break;
+                }
+            }
+        }
+
+        int highest =
+            Mathf.Max(
+                purple,
+                green,
+                yellow,
+                red
+            );
+
+        if (highest == purple)
+            return CardColor.Purple;
+
+        if (highest == green)
+            return CardColor.Green;
+
+        if (highest == yellow)
+            return CardColor.Yellow;
+
+        return CardColor.Red;
+    }
+
+    // ============================================================
+    // FIND VISUAL
     // ============================================================
 
     private Card3D FindVisualForCard(
@@ -1305,13 +3142,15 @@ public class GameManager : MonoBehaviour
             return null;
         }
 
-        card.SetupCard(data);
+        card.SetupCard(
+            data
+        );
 
         return card;
     }
 
     // ============================================================
-    // DISCARD CARD
+    // SPAWN DISCARD
     // ============================================================
 
     private void SpawnDiscardCard(
@@ -1323,12 +3162,7 @@ public class GameManager : MonoBehaviour
             return;
         }
 
-        if (currentDiscardVisual != null)
-        {
-            Destroy(
-                currentDiscardVisual.gameObject
-            );
-        }
+        ClearDiscardVisuals();
 
         GameObject obj =
             Instantiate(
@@ -1358,11 +3192,18 @@ public class GameManager : MonoBehaviour
         if (card == null)
         {
             Destroy(obj);
+
             return;
         }
 
-        card.SetupCard(data);
-        card.SetCardBackVisible(false);
+        card.SetupCard(
+            data
+        );
+
+        card.SetCardBackVisible(
+            false
+        );
+
         card.CaptureCurrentTransformAsNormal();
 
         DisableCardColliders(
@@ -1374,7 +3215,32 @@ public class GameManager : MonoBehaviour
     }
 
     // ============================================================
-    // DRAW PILE VISUALS
+    // CLEAR DISCARD
+    // ============================================================
+
+    private void ClearDiscardVisuals()
+    {
+        if (discardPilePosition == null)
+            return;
+
+        for (int i =
+             discardPilePosition.childCount - 1;
+             i >= 0;
+             i--)
+        {
+            Destroy(
+                discardPilePosition
+                    .GetChild(i)
+                    .gameObject
+            );
+        }
+
+        currentDiscardVisual =
+            null;
+    }
+
+    // ============================================================
+    // DRAW PILE VISUAL
     // ============================================================
 
     private void SpawnDrawPileVisual()
@@ -1432,20 +3298,122 @@ public class GameManager : MonoBehaviour
 
             if (card != null)
             {
-                card.SetCardBackVisible(true);
+                card.SetCardBackVisible(
+                    true
+                );
 
-                card.SetAnimationLocked(true);
+                card.SetAnimationLocked(
+                    true
+                );
 
                 card.CaptureCurrentTransformAsNormal();
             }
 
-            // Decorative pile cards are not clickable.
-            DisableCardColliders(obj);
+            DisableCardColliders(
+                obj
+            );
         }
     }
 
     // ============================================================
-    // HELPERS
+    // TURN SYSTEM
+    // ============================================================
+
+    private int GetNextPlayerIndex(
+        int fromIndex)
+    {
+        int next =
+            fromIndex +
+            turnDirection;
+
+        if (next < 0)
+            next = 3;
+
+        if (next > 3)
+            next = 0;
+
+        return next;
+    }
+
+    private void GoToNextPlayer()
+    {
+        GoToNextPlayerFrom(
+            currentPlayerIndex
+        );
+    }
+
+    private void GoToNextPlayerFrom(
+        int fromIndex)
+    {
+        currentPlayerIndex =
+            GetNextPlayerIndex(
+                fromIndex
+            );
+
+        playerDrawCount = 0;
+
+        playerDrewPlayableCardThisTurn =
+            false;
+
+        state =
+            GameState.Playing;
+
+        UpdateTurnUI();
+
+        if (currentPlayerIndex != 0)
+        {
+            StartCoroutine(
+                RunAITurn()
+            );
+        }
+    }
+
+    // ============================================================
+    // ADVANCE MULTIPLE TURNS
+    // ============================================================
+
+    private void AdvanceTurnsFromCurrent(
+        int numberOfTurns)
+    {
+        int startingIndex =
+            currentPlayerIndex;
+
+        int resultIndex =
+            startingIndex;
+
+        for (int i = 0;
+             i < numberOfTurns;
+             i++)
+        {
+            resultIndex =
+                GetNextPlayerIndex(
+                    resultIndex
+                );
+        }
+
+        currentPlayerIndex =
+            resultIndex;
+
+        playerDrawCount = 0;
+
+        playerDrewPlayableCardThisTurn =
+            false;
+
+        state =
+            GameState.Playing;
+
+        UpdateTurnUI();
+
+        if (currentPlayerIndex != 0)
+        {
+            StartCoroutine(
+                RunAITurn()
+            );
+        }
+    }
+
+    // ============================================================
+    // DISABLE CARD COLLIDERS
     // ============================================================
 
     private void DisableCardColliders(
@@ -1459,6 +3427,49 @@ public class GameManager : MonoBehaviour
             collider.enabled = false;
         }
     }
+
+    // ============================================================
+    // GET HAND
+    // ============================================================
+
+    private List<CardData> GetHand(
+        int index)
+    {
+        if (index == 0)
+            return playerHand;
+
+        return GetAIHand(index);
+    }
+
+    // ============================================================
+    // GET VISUALS
+    // ============================================================
+
+    private List<Card3D> GetVisuals(
+        int index)
+    {
+        if (index == 0)
+            return playerVisualCards;
+
+        return GetAIVisuals(index);
+    }
+
+    // ============================================================
+    // GET HAND CENTER
+    // ============================================================
+
+    private Transform GetHandCenter(
+        int index)
+    {
+        if (index == 0)
+            return playerHandCenter;
+
+        return GetAIHandCenter(index);
+    }
+
+    // ============================================================
+    // GET AI HAND
+    // ============================================================
 
     private List<CardData> GetAIHand(
         int index)
@@ -1479,6 +3490,10 @@ public class GameManager : MonoBehaviour
         }
     }
 
+    // ============================================================
+    // GET AI VISUALS
+    // ============================================================
+
     private List<Card3D> GetAIVisuals(
         int index)
     {
@@ -1498,6 +3513,10 @@ public class GameManager : MonoBehaviour
         }
     }
 
+    // ============================================================
+    // GET AI HAND CENTER
+    // ============================================================
+
     private Transform GetAIHandCenter(
         int index)
     {
@@ -1516,6 +3535,10 @@ public class GameManager : MonoBehaviour
                 return null;
         }
     }
+
+    // ============================================================
+    // GET AI
+    // ============================================================
 
     private AIOpponent GetAI(
         int index)
@@ -1537,7 +3560,7 @@ public class GameManager : MonoBehaviour
     }
 
     // ============================================================
-    // HAND REFRESH
+    // REFRESH HANDS
     // ============================================================
 
     public void RefreshAllHands()
@@ -1570,6 +3593,10 @@ public class GameManager : MonoBehaviour
             );
         }
     }
+
+    // ============================================================
+    // DESTROY HAND VISUALS
+    // ============================================================
 
     private void DestroyAllHandVisuals()
     {
@@ -1621,7 +3648,9 @@ public class GameManager : MonoBehaviour
     {
         return
             card != null &&
-            playerVisualCards.Contains(card);
+            playerVisualCards.Contains(
+                card
+            );
     }
 
     // ============================================================
@@ -1630,101 +3659,239 @@ public class GameManager : MonoBehaviour
 
     private void UpdateTurnUI()
     {
-        if (turnText == null)
+        if (turnText != null)
+        {
+            if (currentPlayerIndex == 0)
+            {
+                if (state ==
+                    GameState.WaitingForChallenge)
+                {
+                    turnText.text =
+                        "YOUR TURN - CHALLENGE?";
+                }
+                else if (pendingDrawAmount > 0)
+                {
+                    turnText.text =
+                        "YOUR TURN - +" +
+                        pendingDrawAmount;
+                }
+                else
+                {
+                    turnText.text =
+                        "YOUR TURN  DRAW " +
+                        playerDrawCount +
+                        "/" +
+                        maximumPlayerDraws;
+                }
+            }
+            else if (currentPlayerIndex == 1)
+            {
+                turnText.text =
+                    "AI 1'S TURN";
+            }
+            else if (currentPlayerIndex == 2)
+            {
+                turnText.text =
+                    "AI 2'S TURN";
+            }
+            else
+            {
+                turnText.text =
+                    "AI 3'S TURN";
+            }
+        }
+
+        UpdateGameplayUI();
+    }
+
+    private void UpdateGameplayUI()
+    {
+        UpdateCurrentColorUI();
+        UpdateDrawPenaltyUI();
+    }
+
+    private void UpdateCurrentColorUI()
+    {
+        if (currentColorText == null)
             return;
 
-        if (currentPlayerIndex == 0)
+        CardColor displayColor =
+            activeColor;
+
+        if (displayColor == CardColor.Wild)
         {
-            turnText.text =
-                $"YOUR TURN  " +
-                $"DRAW {playerDrawCount}/" +
-                $"{maximumPlayerDraws}";
+            currentColorText.text =
+                "CURRENT COLOR: NONE";
+
+            return;
         }
-        else if (currentPlayerIndex == 1)
+
+        currentColorText.text =
+            "CURRENT COLOR: " +
+            FormatCardColor(displayColor).ToUpperInvariant();
+    }
+
+    private void UpdateDrawPenaltyUI()
+    {
+        if (drawPenaltyText == null)
+            return;
+
+        if (pendingDrawAmount > 0)
         {
-            turnText.text =
-                "AI 1'S TURN";
-        }
-        else if (currentPlayerIndex == 2)
-        {
-            turnText.text =
-                "AI 2'S TURN";
+            drawPenaltyText.gameObject.SetActive(true);
+
+            drawPenaltyText.text =
+                "DRAW PENALTY: +" +
+                pendingDrawAmount;
         }
         else
         {
-            turnText.text =
-                "AI 3'S TURN";
+            drawPenaltyText.text =
+                string.Empty;
+
+            drawPenaltyText.gameObject.SetActive(false);
         }
     }
 
-    // ============================================================
-    // CHALLENGE FOUNDATION
-    // ============================================================
-
-    public void AcceptPlayerChallenge()
+    private void ShowSpecialEffect(
+        string message)
     {
-        if (state !=
-            GameState.WaitingForChallenge)
-        {
+        if (specialEffectText == null)
             return;
+
+        if (specialEffectRoutine != null)
+        {
+            StopCoroutine(
+                specialEffectRoutine
+            );
         }
 
-        BeginChallenge(true);
-    }
+        specialEffectText.gameObject.SetActive(true);
+        specialEffectText.text = message;
 
-    public void DeclinePlayerChallenge()
-    {
-        if (state !=
-            GameState.WaitingForChallenge)
-        {
-            return;
-        }
-
-        GoToNextPlayer();
-    }
-
-    private void BeginChallenge(
-        bool playerIsChallenger)
-    {
-        state =
-            GameState.CameraTransition;
-
-        if (MinigameManager.Instance == null)
-        {
-            state =
-                GameState.Playing;
-
-            return;
-        }
-
-        MinigameManager.Instance
-            .StartChallenge(
-                currentTopCard.color,
-                playerIsChallenger
+        specialEffectRoutine =
+            StartCoroutine(
+                HideSpecialEffectAfterDelay()
             );
     }
 
-    public void ChallengeFinished(
-        bool challengerWon)
+    private IEnumerator HideSpecialEffectAfterDelay()
     {
-        state =
-            GameState.ResolvingChallenge;
-
-        if (TransitionManager.Instance != null)
-        {
-            TransitionManager.Instance
-                .EndChallenge();
-        }
-
-        StartCoroutine(
-            FinishChallenge()
+        yield return new WaitForSeconds(
+            Mathf.Max(
+                0.05f,
+                specialEffectDuration
+            )
         );
+
+        HideSpecialEffect();
     }
 
-    private IEnumerator FinishChallenge()
+    private void HideSpecialEffect()
     {
-        yield return new WaitForSeconds(1.5f);
+        if (specialEffectRoutine != null)
+        {
+            StopCoroutine(
+                specialEffectRoutine
+            );
 
-        GoToNextPlayer();
+            specialEffectRoutine =
+                null;
+        }
+
+        if (specialEffectText != null)
+        {
+            specialEffectText.text =
+                string.Empty;
+
+            specialEffectText.gameObject.SetActive(false);
+        }
+    }
+
+    private string GetSpecialEffectText(
+        CardData card)
+    {
+        if (card == null)
+            return string.Empty;
+
+        switch (card.type)
+        {
+            case CardType.Draw2:
+                return "DRAW +2!";
+
+            case CardType.Draw4:
+                return "DRAW +4!";
+
+            case CardType.Reverse:
+                return "REVERSE!";
+
+            case CardType.Skip:
+                return "SKIP!";
+
+            case CardType.ColorChange:
+                if (card.chosenColor != CardColor.Wild)
+                {
+                    return
+                        "COLOR CHANGED TO " +
+                        FormatCardColor(
+                            card.chosenColor
+                        ).ToUpperInvariant() +
+                        "!";
+                }
+
+                return "COLOR CHANGE!";
+
+            default:
+                return string.Empty;
+        }
+    }
+
+    private string FormatCardColor(
+        CardColor color)
+    {
+        return color switch
+        {
+            CardColor.Purple => "Purple",
+            CardColor.Green => "Green",
+            CardColor.Yellow => "Yellow",
+            CardColor.Red => "Red",
+            _ => "None"
+        };
+    }
+
+    // ============================================================
+    // CHALLENGE PANEL
+    // ============================================================
+
+    private void HideChallengePanel()
+    {
+        if (ChallengePanel.Instance != null)
+        {
+            ChallengePanel.Instance.HideAll();
+        }
+    }
+
+    // ============================================================
+    // PUBLIC GETTERS
+    // ============================================================
+
+    public int GetPendingDrawAmount()
+    {
+        return pendingDrawAmount;
+    }
+
+    public CardType GetPendingDrawType()
+    {
+        return pendingDrawType;
+    }
+
+    public CardColor GetActiveColor()
+    {
+        return activeColor;
+    }
+
+    public CardData GetPendingSpecialCard()
+    {
+        return pendingSpecialCard;
     }
 }
