@@ -2676,13 +2676,21 @@ MonoBehaviour:
   sequence:
   - clip: {fileID: 8300000, guid: 219759169a5ea6c4a8f140318a64cf03, type: 3}
     delayAfter: 0
-  - clip: {fileID: 0}
+  - clip: {fileID: 8300000, guid: 18f208026f9a0d34d80c164721cccc2d, type: 3}
     delayAfter: 0
-  - clip: {fileID: 0}
+  - clip: {fileID: 8300000, guid: 18f208026f9a0d34d80c164721cccc2d, type: 3}
+    delayAfter: 7
+  - clip: {fileID: 8300000, guid: bcc039b8502f55c44a54741e3eb8aaab, type: 3}
     delayAfter: 0
-  - clip: {fileID: 0}
+  - clip: {fileID: 8300000, guid: bcc039b8502f55c44a54741e3eb8aaab, type: 3}
     delayAfter: 0
-  - clip: {fileID: 0}
+  - clip: {fileID: 8300000, guid: 5238a50b0fccb6047953821fbfb8b36b, type: 3}
+    delayAfter: 0
+  - clip: {fileID: 8300000, guid: bcc039b8502f55c44a54741e3eb8aaab, type: 3}
+    delayAfter: 0
+  - clip: {fileID: 8300000, guid: bcc039b8502f55c44a54741e3eb8aaab, type: 3}
+    delayAfter: 0
+  - clip: {fileID: 8300000, guid: 18f208026f9a0d34d80c164721cccc2d, type: 3}
     delayAfter: 0
   playOnStart: 1
 --- !u!4 &1846661647
