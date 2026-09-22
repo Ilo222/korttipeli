@@ -2678,8 +2678,6 @@ MonoBehaviour:
     delayAfter: 0
   - clip: {fileID: 8300000, guid: 6b9ee8eb090239c4aac7199c21539459, type: 3}
     delayAfter: 9
-  - clip: {fileID: 8300000, guid: cf3202a528ebb2c45bd7e55408dfa124, type: 3}
-    delayAfter: 0
   - clip: {fileID: 8300000, guid: a121b52265487bb4ea37edbdbbd35511, type: 3}
     delayAfter: 0
   - clip: {fileID: 8300000, guid: a121b52265487bb4ea37edbdbbd35511, type: 3}
