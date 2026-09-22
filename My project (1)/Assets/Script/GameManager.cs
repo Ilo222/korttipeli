@@ -1,6 +1,8 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 using TMPro;
 
 public class GameManager : MonoBehaviour
@@ -77,6 +79,23 @@ public class GameManager : MonoBehaviour
 
     [Header("UI Feedback")]
     [SerializeField] private float specialEffectDuration = 1.35f;
+
+    // ============================================================
+    // GAME OVER UI
+    // ============================================================
+
+    [Header("Game Over UI")]
+    [SerializeField] private GameObject losePanel;
+    [SerializeField] private TextMeshProUGUI loseText;
+    [SerializeField] private Button retryButton;
+    [SerializeField] private string loseMessage = "YOU LOSE!";
+
+    // True once either the player or an AI has ended the match.
+    private bool gameOverTriggered;
+
+    // Public so other presentation scripts can know that the
+    // GameManager has accepted the player as the winner.
+    public bool PlayerWon { get; private set; }
 
     // ============================================================
     // STARTING HAND
@@ -244,6 +263,13 @@ public class GameManager : MonoBehaviour
     private void Awake()
     {
         Instance = this;
+
+        if (retryButton != null)
+        {
+            retryButton.onClick.AddListener(
+                RetryCurrentGame
+            );
+        }
     }
 
     private void Start()
@@ -258,6 +284,15 @@ public class GameManager : MonoBehaviour
     public void StartGame()
     {
         StopAllCoroutines();
+
+        gameOverTriggered = false;
+        PlayerWon = false;
+
+        if (losePanel != null)
+            losePanel.SetActive(false);
+
+        if (loseText != null)
+            loseText.text = string.Empty;
 
         state = GameState.Playing;
 
@@ -650,6 +685,24 @@ public class GameManager : MonoBehaviour
         if (clickedCard.data == null)
             return;
 
+        // A game may only be won with a normal number card.
+        // Therefore a special card can never be played as the
+        // player's final card.
+        if (playerHand.Count == 1 &&
+            clickedCard.data.type != CardType.Number)
+        {
+            Debug.Log(
+                "You cannot finish the game with a special card. " +
+                "Your final card must be a normal number card."
+            );
+
+            ShowSpecialEffect(
+                "FINISH WITH A NUMBER CARD!"
+            );
+
+            return;
+        }
+
         if (!CanPlayCardNow(
                 clickedCard.data))
         {
@@ -873,7 +926,23 @@ public class GameManager : MonoBehaviour
             false;
 
         // --------------------------------------------------------
-        // Resolve.
+        // PLAYER WIN
+        //
+        // The final card must be a normal number card.
+        // The card animation has already finished at this point,
+        // so the win state begins only after the final card lands.
+        // --------------------------------------------------------
+
+        if (playerHand.Count == 0 &&
+            finalCard.type == CardType.Number)
+        {
+            TriggerPlayerWin();
+
+            yield break;
+        }
+
+        // --------------------------------------------------------
+        // Resolve normally.
         // --------------------------------------------------------
 
         yield return StartCoroutine(
@@ -2503,6 +2572,16 @@ public class GameManager : MonoBehaviour
                 pendingDrawType
             );
 
+        // An AI is also not allowed to finish with a special card.
+        // If its last card is special, it must keep playing/drawing
+        // until it can finish with a normal number card.
+        if (hand.Count == 1 &&
+            chosen != null &&
+            chosen.type != CardType.Number)
+        {
+            chosen = null;
+        }
+
         if (chosen != null)
         {
             yield return
@@ -2954,6 +3033,24 @@ public class GameManager : MonoBehaviour
 
         currentTopCard =
             cards[cards.Count - 1];
+
+        // --------------------------------------------------------
+        // AI WIN = PLAYER LOSES
+        //
+        // Only a normal number card may finish the game.
+        // Because special-card finishing is prevented above,
+        // an empty AI hand here represents a valid AI win.
+        // --------------------------------------------------------
+
+        if (hand.Count == 0 &&
+            currentTopCard.type == CardType.Number)
+        {
+            TriggerAILoss(
+                playerIndex
+            );
+
+            yield break;
+        }
 
         yield return StartCoroutine(
             ResolvePlayedCardAfterAnimation(
@@ -3651,6 +3748,73 @@ public class GameManager : MonoBehaviour
             playerVisualCards.Contains(
                 card
             );
+    }
+
+    // ============================================================
+    // GAME OVER
+    // ============================================================
+
+    private void TriggerPlayerWin()
+    {
+        if (gameOverTriggered)
+            return;
+
+        gameOverTriggered = true;
+        PlayerWon = true;
+
+        state = GameState.GameOver;
+
+        HideChallengePanel();
+        HideSpecialEffect();
+
+        if (turnText != null)
+            turnText.text = "YOU WIN!";
+
+        Debug.Log(
+            "PLAYER WON THE GAME! Final card was a normal number card."
+        );
+    }
+
+    private void TriggerAILoss(int aiPlayerIndex)
+    {
+        if (gameOverTriggered)
+            return;
+
+        gameOverTriggered = true;
+        PlayerWon = false;
+
+        state = GameState.GameOver;
+
+        HideChallengePanel();
+        HideSpecialEffect();
+
+        if (turnText != null)
+            turnText.text = "YOU LOSE!";
+
+        if (loseText != null)
+        {
+            loseText.text =
+                "YOU LOSE!\n" +
+                "AI " +
+                aiPlayerIndex +
+                " FINISHED FIRST!";
+        }
+
+        if (losePanel != null)
+            losePanel.SetActive(true);
+
+        Debug.Log(
+            "PLAYER LOST. AI " +
+            aiPlayerIndex +
+            " emptied its hand."
+        );
+    }
+
+    public void RetryCurrentGame()
+    {
+        SceneManager.LoadScene(
+            SceneManager.GetActiveScene().buildIndex
+        );
     }
 
     // ============================================================
