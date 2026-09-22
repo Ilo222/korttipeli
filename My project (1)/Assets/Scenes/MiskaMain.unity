@@ -6768,12 +6768,12 @@ MonoBehaviour:
   loseText: {fileID: 60720625}
   retryButton: {fileID: 606149295}
   loseMessage: YOU LOSE!
-  startingCards: 1
-  draw2Copies: 2
-  draw4Copies: 2
-  reverseCopies: 2
-  skipCopies: 2
-  colorChangeCopies: 2
+  startingCards: 7
+  draw2Copies: 1
+  draw4Copies: 0
+  reverseCopies: 1
+  skipCopies: 0
+  colorChangeCopies: 1
   drawPileVisualCards: 100
   drawPileCardOffset: 0.015
   maximumPlayerDraws: 3
