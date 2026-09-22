@@ -7,24 +7,15 @@ public class PauseMenu : MonoBehaviour
     [Header("UI Paneeli")]
     public GameObject pauseMenuUI;
 
-    [Header("Napit")]
-    public RectTransform resumeButton;
-    public RectTransform restartButton;
-    public RectTransform mainMenuButton;
-
-    [Header("Canvas")]
-    public Canvas pauseCanvas;
-
     [Header("Skenejen nimet")]
-    public string restartSceneName = "MiskaMain";
-    public string mainMenuSceneName = "MainMenu";
+    public string restartSceneName = "MiskaMain"; 
+    public string mainMenuSceneName = "MainMenu"; 
 
     private bool isMenuOpen = false;
 
     void Start()
     {
-        Time.timeScale = 1f;
-
+        
         if (pauseMenuUI != null)
         {
             pauseMenuUI.SetActive(false);
@@ -33,6 +24,7 @@ public class PauseMenu : MonoBehaviour
 
     void Update()
     {
+        
         if (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame)
         {
             if (isMenuOpen)
@@ -44,6 +36,7 @@ public class PauseMenu : MonoBehaviour
                 OpenMenu();
             }
         }
+<<<<<<< HEAD
 
         if (isMenuOpen)
         {
@@ -114,37 +107,41 @@ public class PauseMenu : MonoBehaviour
         }
 
         Time.timeScale = 0f;
+=======
+>>>>>>> parent of 1efd334 (PauseMenu)
     }
 
     public void Resume()
     {
-        Debug.Log("RESUME TOIMII");
-
         isMenuOpen = false;
-
         if (pauseMenuUI != null)
         {
             pauseMenuUI.SetActive(false);
         }
+    }
 
+<<<<<<< HEAD
         Time.timeScale = 1f;
+=======
+    void OpenMenu()
+    {
+        isMenuOpen = true;
+        if (pauseMenuUI != null)
+        {
+            pauseMenuUI.SetActive(true);
+        }
+>>>>>>> parent of 1efd334 (PauseMenu)
     }
 
     public void Restart()
     {
-        Debug.Log("RESTART TOIMII");
-
-        Time.timeScale = 1f;
-
+        
         SceneManager.LoadScene(restartSceneName);
     }
 
     public void MainMenu()
     {
-        Debug.Log("MAIN MENU TOIMII");
-
-        Time.timeScale = 1f;
-
+        
         SceneManager.LoadScene(mainMenuSceneName);
     }
 }
