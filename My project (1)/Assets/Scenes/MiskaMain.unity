@@ -6252,7 +6252,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PauseMenu
   pauseMenuUI: {fileID: 1363729817}
   resumeButton: {fileID: 11048211}
-  restartButton: {fileID: 11048211}
+  restartButton: {fileID: 1991591822}
   mainMenuButton: {fileID: 2079028131}
   pauseCanvas: {fileID: 1599723286}
   restartSceneName: MiskaMain

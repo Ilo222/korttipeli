@@ -29,9 +29,6 @@ public class PauseMenu : MonoBehaviour
         {
             pauseMenuUI.SetActive(false);
         }
-
-        Cursor.lockState = CursorLockMode.Locked;
-        Cursor.visible = false;
     }
 
     void Update()
@@ -50,9 +47,6 @@ public class PauseMenu : MonoBehaviour
 
         if (isMenuOpen)
         {
-            Cursor.lockState = CursorLockMode.None;
-            Cursor.visible = true;
-
             CheckMouseClick();
         }
     }
@@ -120,12 +114,6 @@ public class PauseMenu : MonoBehaviour
         }
 
         Time.timeScale = 0f;
-
-        Cursor.lockState = CursorLockMode.None;
-        Cursor.visible = true;
-
-        Debug.Log("Cursor lock: " + Cursor.lockState);
-        Debug.Log("Cursor visible: " + Cursor.visible);
     }
 
     public void Resume()
@@ -140,9 +128,6 @@ public class PauseMenu : MonoBehaviour
         }
 
         Time.timeScale = 1f;
-
-        Cursor.lockState = CursorLockMode.Locked;
-        Cursor.visible = false;
     }
 
     public void Restart()
